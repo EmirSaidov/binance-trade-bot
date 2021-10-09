@@ -1045,6 +1045,14 @@ def StartBot(path):
                 time.sleep(5) 
                 StartBot(path)
 
+        elif ("ConnectionResetError" in str(e)):
+            print(datetime.now(),"Произошла ошибка во время подключения программа попробует еще раз через 5 секунд")
+
+            TelegramBot("Произошла ошибка во время подключения бот будет продолжать пытаться подключиться"+ str(e),path)
+
+            time.sleep(5) 
+            StartBot(path)
+
         else:
             print("\n-------------------------------------------------")
             print("Произошла ошибка:")
