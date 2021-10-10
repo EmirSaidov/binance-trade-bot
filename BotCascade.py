@@ -1,4 +1,3 @@
-import openpyxl
 from openpyxl import load_workbook
 from datetime import date
 from datetime import datetime
@@ -239,24 +238,39 @@ def BuyOrder(allocFunds,btc_price,client,coin,c6,ws2,ws1,flag,assetExcel1,assetE
             TelegramBot("Произошла ошибка во время подключения с бинансом количество оставшихся попыток:" + str(buyFlag)+ str(e),path)
 
             if (buyFlag > 0):
-                buyFlag = buyFlag - 1
 
                 print ("Операция повторится через 5 секунд")
                 time.sleep(5) 
 
-                if (buyFlag == 0):
+                if (buyFlag == 1):
                     print ("Бот не смог подключиться данные о покупке были удаленны")
 
-                    c1 = ws2.cell(row = flag, column = 1)
+                    c1 = ws2.cell(row = flag, column = 9)
                     c1.value = None
 
-                    c2 = ws2.cell(row = flag, column = 2)
+                    c2 = ws2.cell(row = flag, column = 10)
                     c2.value = None
 
-                    c3 = ws2.cell(row = flag, column = 6)
+                    c3 = ws2.cell(row = flag, column = 18)
                     c3.value = None
+
+                    c4 = ws2.cell(row = flag, column = 35)
+                    c4.value = None
+
+                    c5 = ws2.cell(row = flag, column = 52)
+                    c5.value = None
+                    
+                    c6 = ws2.cell(row = flag, column = 69)
+                    c6.value = None
+
+                    c7 = ws2.cell(row = flag, column = 86)
+                    c7.value = None
+
                     wb2.save(path)
+
                     StartBot(path)
+
+                buyFlag = buyFlag - 1
 
             else:
                 StartBot(path)
@@ -271,7 +285,7 @@ def BuyOrder(allocFunds,btc_price,client,coin,c6,ws2,ws1,flag,assetExcel1,assetE
     
 
 
-def SellOrder(sellFlag,assetQuant,client,coin,c7,ws1,ws2,flag,assetExcel1,assetExcel2,wb2,path,sellOrderList,statusFlag,sellOrderDict,btc_price):
+def SellOrder(sellFlag,assetQuant,client,coin,c7,ws1,ws2,flag,assetExcel1,assetExcel2,wb2,path,sellOrderList,statusFlag,sellOrderDict,btc_price,signalSellFlag):
     while (sellFlag > 0):                                
         try:
             if (statusFlag == 0):
@@ -375,24 +389,21 @@ def SellOrder(sellFlag,assetQuant,client,coin,c7,ws1,ws2,flag,assetExcel1,assetE
             print(e)
             
             if (sellFlag > 0):
-                sellFlag = sellFlag - 1
 
                 print ("Операция повторится через 5 секунд")
                 time.sleep(5) 
-
-                if (sellFlag == 0):
+                
+                if (sellFlag == 1):
                     print ("Бот не смог подключиться данные о продаже были удаленны")
 
-                    c1 = ws2.cell(row = flag, column = 1)
+                    c1 = ws2.cell(row = flag, column = signalSellFlag)
                     c1.value = None
 
-                    c2 = ws2.cell(row = flag, column = 2)
-                    c2.value = None
-
-                    c3 = ws2.cell(row = flag, column = 6)
-                    c3.value = None
                     wb2.save(path)
                     StartBot(path)
+
+                sellFlag = sellFlag - 1
+
             else:
                 StartBot(path)
         except BinanceOrderException as e:
@@ -884,7 +895,7 @@ def MainFunc(path):
                         print(c7)
                         wbt.close()
                         
-                        SellOrder(sellFlag,assetQuant,client,coin,c7,ws1,ws2,flag,assetExcel1,assetExcel2,wb2,path,sellOrderList,outerStatusFlag,sellOrderDict,btc_price)
+                        SellOrder(sellFlag,assetQuant,client,coin,c7,ws1,ws2,flag,assetExcel1,assetExcel2,wb2,path,sellOrderList,outerStatusFlag,sellOrderDict,btc_price,signalSellFlag)
                         
                         loopFlag = 1
                         innerStatusFlag = 1
@@ -1013,6 +1024,15 @@ def TelegramBot(message,path):
         time.sleep(5)
         StartBot(path)
 
+def TelegramBotOrder(message,path):
+    try:
+        teleBot = telegram.Bot("1960666049:AAFEaBBvpvNM37i2rCt70JIC1w-Rt1g_v1M")
+        teleBot.send_message(-739688904,str(datetime.now())+" "+str(path)+" "+message)
+    except Exception as e:
+        print ("\n Не удалось подключиться к телеграм боту, алго бот продолжит пытаться подключиться")
+        print (e)
+        time.sleep(5)
+        StartBot(path)
 
 
 
