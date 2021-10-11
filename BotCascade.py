@@ -1,3 +1,5 @@
+from os import close
+import sys
 from openpyxl import load_workbook
 from datetime import date
 from datetime import datetime
@@ -1155,7 +1157,8 @@ def Menu():
     print ("0 - Проверить баланс")
     print ("1 - Начать торговлю с начала")
     print ("2 - Продолжить торговлю")
-    print ("3 - Продать валюту\n")
+    print ("3 - Продать валюту")
+    print ("9 - Выйти из приложения\n")
     choice = input()
 
     
@@ -1202,6 +1205,17 @@ def Menu():
     elif (choice == "0"):
         CheckBalance()
         Menu()
+
+    elif (choice == "9"):
+
+        wb = load_workbook(GetPath())
+        wb.close()
+
+        wbx = xw.Book((GetPath()))
+        wbx.close()
+
+        sys.exit()
+
     else:
         print("\nВыбранный вами режим не существует попробуйте еще раз")
         Menu()
