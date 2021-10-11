@@ -14,6 +14,17 @@ import math
 
 path = ""
 
+# ordersInProcess = []
+
+# def BlackOutCheck():
+#     global ordersInProcess
+#     if (len(ordersInProcess) == 0):
+#          True
+#     else:
+#         for order in ordersInProcess:
+#             orderList = ordersInProcess[order]
+#             orderList[0]
+
 def CheckBalance():
 
     wb2 = load_workbook(GetPath())
@@ -128,6 +139,8 @@ def GetPathTemplate():
 
 
 def BuyOrder(allocFunds,btc_price,client,coin,c6,ws2,ws1,flag,assetExcel1,assetExcel2,wb2,buyFlag,quantFlag,path,buyOrderList,statusFlag,quantBuyFlag):
+    global ordersInProcess
+
     while (buyFlag > 0):
         try:
             if (statusFlag == 0):
@@ -164,6 +177,9 @@ def BuyOrder(allocFunds,btc_price,client,coin,c6,ws2,ws1,flag,assetExcel1,assetE
                 print("-------------------------------------------------")
 
                 buyOrderList.append(buy_order_limit["orderId"])
+
+                # ordersInProcess.append(["buy",buy_order_limit["orderId"],flag,quantBuyFlag,10])
+
                 buyFlag = 10
 
                 break
@@ -200,6 +216,22 @@ def BuyOrder(allocFunds,btc_price,client,coin,c6,ws2,ws1,flag,assetExcel1,assetE
 
                         buyFlag = 10
                         time.sleep(15) 
+                        
+                        cascade = 0
+
+                        if (quantBuyFlag== 17):
+                            cascade = 1
+                        elif(quantBuyFlag==34): 
+                            cascade = 2
+                        elif(quantBuyFlag==51): 
+                            cascade = 3  
+                        elif(quantBuyFlag==68): 
+                            cascade = 4
+                        elif(quantBuyFlag==85): 
+                            cascade = 5
+                            
+                        TelegramBotOrder("Произошла покупка, Каскад: "+cascade+" Кол-во: "+cBoughtQuant+"; Цена: "+cBoughtPrice+"; Баланс "+assetExcel1+": "+сFirstAssetBalance+"; Баланс "+assetExcel2+": "+cSecondAssetBalance,path)
+                        
 
                 
                     else:
@@ -282,7 +314,9 @@ def BuyOrder(allocFunds,btc_price,client,coin,c6,ws2,ws1,flag,assetExcel1,assetE
 
             print(e)
             Menu()
-    
+        except Exception as e:
+            print(datetime.now(),"Нету связи с интернетом бот попробует записать данные еще раз через 1 минуту "+ str(e))
+            time.sleep(60) 
 
 
 def SellOrder(sellFlag,assetQuant,client,coin,c7,ws1,ws2,flag,assetExcel1,assetExcel2,wb2,path,sellOrderList,statusFlag,sellOrderDict,btc_price,signalSellFlag):
@@ -355,9 +389,25 @@ def SellOrder(sellFlag,assetQuant,client,coin,c7,ws1,ws2,flag,assetExcel1,assetE
                         print("\n\n-------------------------------------------------")
                         print(datetime.now(),"продажа прошла успешно, данные о продаже:")
                         print(order_confirm)
+                        
+                        cascade = 0
+
+                        if (SellPair[0]== 20):
+                            cascade = 1
+                        elif(SellPair[0]==37): 
+                            cascade = 2
+                        elif(SellPair[0]==54): 
+                            cascade = 3  
+                        elif(SellPair[0]==71): 
+                            cascade = 4
+                        elif(SellPair[0]==88): 
+                            cascade = 5
+
+                        TelegramBotOrder("Произошла продажа, Каскад: "+cascade+" Кол-во: "+cBoughtQuant+"; Цена: "+cBoughtPrice+"; Баланс "+assetExcel1+": "+сFirstAssetBalance+"; Баланс "+assetExcel2+": "+cSecondAssetBalance,path)
+                        
                         sellFlag = 10
                         time.sleep(15) 
-
+                        
 
                     else:
                         SellPair = next(pairs_iterator)
@@ -414,6 +464,11 @@ def SellOrder(sellFlag,assetQuant,client,coin,c7,ws1,ws2,flag,assetExcel1,assetE
 
             print(e)
             Menu()
+        except Exception as e:
+            print(datetime.now(),"Нету связи с интернетом бот попробует записать данные еще раз через 1 минуту "+ str(e))
+            time.sleep(60) 
+
+
 
 
 
@@ -1038,6 +1093,7 @@ def TelegramBotOrder(message,path):
 
 
 def StartBot(path):
+    
     try:
             MainFunc(path)
 
@@ -1051,6 +1107,13 @@ def StartBot(path):
             StartBot(path)
             
         elif ("Timestamp for this request was" in str(e)):
+            print(datetime.now(),"Произошла ошибка: Синхронизируйте время вашей системы в настройках. Программа попробует еще раз через 5 секунд")
+                        
+            TelegramBot("Произошла ошибка: Синхронизируйте время вашей системы в настройках бот будет продолжать пытаться подключиться"+ str(e),path)
+            time.sleep(5) 
+            StartBot(path)
+
+        elif ("Timestamp for this request is" in str(e)):
             print(datetime.now(),"Произошла ошибка: Синхронизируйте время вашей системы в настройках. Программа попробует еще раз через 5 секунд")
                         
             TelegramBot("Произошла ошибка: Синхронизируйте время вашей системы в настройках бот будет продолжать пытаться подключиться"+ str(e),path)
