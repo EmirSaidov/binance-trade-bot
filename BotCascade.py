@@ -232,7 +232,7 @@ def BuyOrder(allocFunds,btc_price,client,coin,c6,ws2,ws1,flag,assetExcel1,assetE
                         elif(quantBuyFlag==85): 
                             cascade = 5
                             
-                        TelegramBotOrder("Произошла покупка, Каскад: "+cascade+" Кол-во: "+cBoughtQuant+"; Цена: "+cBoughtPrice+"; Баланс "+assetExcel1+": "+сFirstAssetBalance+"; Баланс "+assetExcel2+": "+cSecondAssetBalance,path)
+                        TelegramBotOrder("Произошла покупка, Каскад: "+str(cascade)+" Кол-во: "+str(cBoughtQuant)+"; Цена: "+str(cBoughtPrice)+"; Баланс "+str(assetExcel1)+": "+str(сFirstAssetBalance)+"; Баланс "+str(assetExcel2)+": "+str(cSecondAssetBalance),path)
                         
 
                 
@@ -405,7 +405,7 @@ def SellOrder(sellFlag,assetQuant,client,coin,c7,ws1,ws2,flag,assetExcel1,assetE
                         elif(SellPair[0]==88): 
                             cascade = 5
 
-                        TelegramBotOrder("Произошла продажа, Каскад: "+cascade+" Кол-во: "+cBoughtQuant+"; Цена: "+cBoughtPrice+"; Баланс "+assetExcel1+": "+сFirstAssetBalance+"; Баланс "+assetExcel2+": "+cSecondAssetBalance,path)
+                        TelegramBotOrder("Произошла продажа, Каскад: "+str(cascade)+" Кол-во: "+str(cBoughtQuant)+"; Цена: "+str(cBoughtPrice)+"; Баланс "+str(assetExcel1)+": "+str(сFirstAssetBalance)+"; Баланс "+str(assetExcel2)+": "+str(cSecondAssetBalance),path)
                         
                         sellFlag = 10
                         time.sleep(15) 
