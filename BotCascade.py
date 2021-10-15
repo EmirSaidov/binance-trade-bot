@@ -232,7 +232,7 @@ def BuyOrder(allocFunds,btc_price,client,coin,c6,ws2,ws1,flag,assetExcel1,assetE
                         elif(quantBuyFlag==85): 
                             cascade = 5
                             
-                        TelegramBotOrder("Произошла покупка, Каскад: "+str(cascade)+" Кол-во: "+str(cBoughtQuant)+"; Цена: "+str(cBoughtPrice)+"; Баланс "+str(assetExcel1)+": "+str(сFirstAssetBalance)+"; Баланс "+str(assetExcel2)+": "+str(cSecondAssetBalance),path)
+                        TelegramBotOrder("Произошла покупка, Каскад: "+str(cascade)+" Кол-во: "+str(cBoughtQuant.value)+"; Цена: "+str(cBoughtPrice.value)+"; Баланс "+str(assetExcel1)+": "+str(сFirstAssetBalance.value)+"; Баланс "+str(assetExcel2)+": "+str(cSecondAssetBalance.value),path)
                         
 
                 
@@ -405,7 +405,7 @@ def SellOrder(sellFlag,assetQuant,client,coin,c7,ws1,ws2,flag,assetExcel1,assetE
                         elif(SellPair[0]==88): 
                             cascade = 5
 
-                        TelegramBotOrder("Произошла продажа, Каскад: "+str(cascade)+" Кол-во: "+str(cBoughtQuant)+"; Цена: "+str(cBoughtPrice)+"; Баланс "+str(assetExcel1)+": "+str(сFirstAssetBalance)+"; Баланс "+str(assetExcel2)+": "+str(cSecondAssetBalance),path)
+                        TelegramBotOrder("Произошла продажа, Каскад: "+str(cascade)+" Кол-во: "+str(cBoughtQuant.value)+"; Цена: "+str(cBoughtPrice.value)+"; Баланс "+str(assetExcel1)+": "+str(сFirstAssetBalance.value)+"; Баланс "+str(assetExcel2)+": "+str(cSecondAssetBalance.value),path)
                         
                         sellFlag = 10
                         time.sleep(15) 
@@ -971,7 +971,7 @@ def MainFunc(path):
                         print(c7)
                         wbt.close()
                         
-                        SellOrder(sellFlag,assetQuant,client,coin,c7,ws1,ws2,flag,assetExcel1,assetExcel2,wb2,path,sellOrderList,outerStatusFlag,sellOrderDict,btc_price)
+                        SellOrder(sellFlag,assetQuant,client,coin,c7,ws1,ws2,flag,assetExcel1,assetExcel2,wb2,path,sellOrderList,outerStatusFlag,sellOrderDict,btc_price,signalSellFlag)
                         
                         loopFlag = 1
                         innerStatusFlag = 1
@@ -989,7 +989,7 @@ def MainFunc(path):
                         print(c7)
                         wbt.close()
                         
-                        SellOrder(sellFlag,assetQuant,client,coin,c7,ws1,ws2,flag,assetExcel1,assetExcel2,wb2,path,sellOrderList,outerStatusFlag,sellOrderDict,btc_price)
+                        SellOrder(sellFlag,assetQuant,client,coin,c7,ws1,ws2,flag,assetExcel1,assetExcel2,wb2,path,sellOrderList,outerStatusFlag,sellOrderDict,btc_price,signalSellFlag)
                         
                         loopFlag = 1
                         innerStatusFlag = 1
@@ -1007,7 +1007,7 @@ def MainFunc(path):
                         print(c7)
                         wbt.close()
                         
-                        SellOrder(sellFlag,assetQuant,client,coin,c7,ws1,ws2,flag,assetExcel1,assetExcel2,wb2,path,sellOrderList,outerStatusFlag,sellOrderDict,btc_price)
+                        SellOrder(sellFlag,assetQuant,client,coin,c7,ws1,ws2,flag,assetExcel1,assetExcel2,wb2,path,sellOrderList,outerStatusFlag,sellOrderDict,btc_price,signalSellFlag)
                         
                         loopFlag = 1
                         innerStatusFlag = 1
@@ -1025,7 +1025,7 @@ def MainFunc(path):
                         print(c7)
                         wbt.close()
                                                 
-                        SellOrder(sellFlag,assetQuant,client,coin,c7,ws1,ws2,flag,assetExcel1,assetExcel2,wb2,path,sellOrderList,outerStatusFlag,sellOrderDict,btc_price)
+                        SellOrder(sellFlag,assetQuant,client,coin,c7,ws1,ws2,flag,assetExcel1,assetExcel2,wb2,path,sellOrderList,outerStatusFlag,sellOrderDict,btc_price,signalSellFlag)
                         
                         loopFlag = 1
                         innerStatusFlag = 1
@@ -1043,7 +1043,7 @@ def MainFunc(path):
                         if(len(buyOrderList)>0):
                             BuyOrder(allocFunds,btc_price,client,coin,c6,ws2,ws1,flag,assetExcel1,assetExcel2,wb2,buyFlag,quantFlag,path,buyOrderList,1,quantBuyFlag)
                         if(len(sellOrderList)>0):
-                            SellOrder(sellFlag,assetQuant,client,coin,c7,ws1,ws2,flag,assetExcel1,assetExcel2,wb2,path,sellOrderList,1,sellOrderDict,btc_price)
+                            SellOrder(sellFlag,assetQuant,client,coin,c7,ws1,ws2,flag,assetExcel1,assetExcel2,wb2,path,sellOrderList,1,sellOrderDict,btc_price,signalSellFlag)
                         buyOrderList = []
                         sellOrderList = []
                         sellOrderDict = {}
