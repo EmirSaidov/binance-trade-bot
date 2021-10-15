@@ -1137,7 +1137,20 @@ def StartBot(path):
 
             time.sleep(5) 
             StartBot(path)
+        elif ("WinError" in str(e)):
+            print(datetime.now(),"Произошла ошибка с эксель файлом программа попробует еще раз через 5 секунд")
 
+            TelegramBot("Произошла ошибка ошибка с эксель файлом бот будет продолжать пытаться подключиться"+ str(e),path)
+
+            time.sleep(5) 
+            StartBot(path)
+        elif ("FindWindowEx" in str(e)):
+            print(datetime.now(),"Произошла ошибка с эксель файлом программа попробует еще раз через 5 секунд")
+
+            TelegramBot("Произошла ошибка ошибка с эксель файлом бот будет продолжать пытаться подключиться"+ str(e),path)
+
+            time.sleep(5) 
+            StartBot(path)
         else:
             print("\n-------------------------------------------------")
             print("Произошла ошибка:")
