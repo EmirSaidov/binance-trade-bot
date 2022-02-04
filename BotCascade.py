@@ -1,34 +1,24 @@
-from os import close
 import sys
-from openpyxl import load_workbook
+import time
+import math
+import json
+import requests
+import telegram
+import pandas as pd
+import xlwings as xw
+from os import close
+import datetime as dt
 from datetime import date
+from binance.enums import *
 from datetime import datetime
 from binance.client import Client
-from binance.enums import *
-from binance.exceptions import BinanceAPIException, BinanceOrderException
-import time
+from openpyxl import load_workbook
 from requests.models import ChunkedEncodingError
-import telegram
-import xlwings as xw
-import math
-
-
+from binance.exceptions import BinanceAPIException, BinanceOrderException
 
 path = ""
 
-# ordersInProcess = []
-
-# def BlackOutCheck():
-#     global ordersInProcess
-#     if (len(ordersInProcess) == 0):
-#          True
-#     else:
-#         for order in ordersInProcess:
-#             orderList = ordersInProcess[order]
-#             orderList[0]
-
-def CheckBalance():
-
+def GetClient():
     wb2 = load_workbook(GetPath())
     ws2 = wb2.worksheets[1]
 
@@ -37,7 +27,18 @@ def CheckBalance():
 
     api_key =  api_cell.value
     api_secret = secret_cell.value
+    
+    wb2.close()
+
     client = Client(api_key, api_secret)
+    return client
+
+def CheckBalance():
+
+    wb2 = load_workbook(GetPath())
+    ws2 = wb2.worksheets[1]
+
+    client = GetClient()
 
     asset_cell1 = ws2.cell(row = 2, column = 6)
     assetExcel1 = asset_cell1.value
@@ -495,12 +496,7 @@ def SellFunc(path):
         print(e)
         Menu()
 
-    api_cell = ws2.cell(row = 2, column = 1)
-    secret_cell = ws2.cell(row = 2, column = 2)
-
-    api_key =  api_cell.value
-    api_secret = secret_cell.value
-    client = Client(api_key, api_secret)
+    client = GetClient()
 
     asset_cell1 = ws2.cell(row = 2, column = 6)
     assetExcel1 = asset_cell1.value
@@ -625,54 +621,6 @@ def ClearExcel():
         print(e)
         Menu()
 
-    # flag = 7
-    # try:
-    #     wb2 = load_workbook(path)
-    #     ws1 = wb2.worksheets[0]
-
-    #     wb2.save(str(datetime.now().strftime("%Y-%m-%d"))+path)
-
-    #     c1 = ws1.cell(row = 1, column = 14)
-    #     c1.value = None
-    #     c1 = ws1.cell(row = 1, column = 31)
-    #     c1.value = None
-    #     c1 = ws1.cell(row = 1, column = 48)
-    #     c1.value = None
-    #     c1 = ws1.cell(row = 1, column = 65)
-    #     c1.value = None
-    #     c1 = ws1.cell(row = 1, column = 82)
-    #     c1.value = None
-
-    # except Exception as e:
-
-    #     print("\n-------------------------------------------------")
-    #     print("Введенное вами имя эксель файла не найденно попробуйте еще раз")
-    #     print("-------------------------------------------------")
-    #     print(e)
-    #     Menu()
-    # while (flag < 1048575):
-    #     c1 = ws1.cell(row = flag, column = 1)
-    #     if (c1.value == None):
-    #         print ("\nЭксель был очистен программа начинает торговлю!")
-    #         wb2.save(path)
-    #         MainFunc(path)
-    #     else:
-    #         flagLoop = 1
-    #         while (flagLoop < 89):
-    #             if (flagLoop < 8):
-    #                 c1 = ws1.cell(row = flag, column = flagLoop)
-    #                 c1.value = None
-    #                 flagLoop = flagLoop + 1
-    #             if (flagLoop == 17 or flagLoop == 20 or flagLoop == 34 or flagLoop == 37 or flagLoop == 51 or flagLoop == 54 or flagLoop == 68 or flagLoop == 71 or flagLoop == 85 or flagLoop == 88):
-    #                 c1 = ws1.cell(row = flag, column = flagLoop)
-    #                 c1.value = None
-    #                 flagLoop = flagLoop + 1
-    #             else:
-    #                 flagLoop = flagLoop + 1
-             
-    #         flag = flag + 1
-
-
 
 
 
@@ -702,12 +650,7 @@ def MainFunc(path):
         print(e)
         Menu()
 
-    api_cell = ws2.cell(row = 2, column = 1)
-    secret_cell = ws2.cell(row = 2, column = 2)
-
-    api_key =  api_cell.value
-    api_secret = secret_cell.value
-    client = Client(api_key, api_secret)
+    client = GetClient()
 
     time_cell = ws2.cell(row = 2, column = 3)
     orderTime = time_cell.value
@@ -782,7 +725,7 @@ def MainFunc(path):
 
     while True:
         
-        client = Client(api_key, api_secret)
+        client = GetClient()
 
         wb2 = load_workbook(path)
         ws2 = wb2.worksheets[0]
@@ -1071,6 +1014,45 @@ def MainFunc(path):
 
 
 
+def LoadTimeStamp():
+    url = 'https://api.binance.com/api/v3/klines'
+    print ("\nВведите валютную пару: (формат: BTCUSDT)\n")
+    symbol = input()
+
+    print ("\nВведите интервал по времени: (формат: 1m,10m,15m,30m,1h,1d,1w,1m)\n")
+    interval = input()
+
+    print ("\nВведите год начала: ")
+    startYear = input()
+    print ("Введите месяц начала: ")
+    startMonth = input()
+    print ("Введите день начала: ")
+    startDay = input()
+    start = str(int(dt.datetime(int(startYear),int(startMonth),int(startDay)).timestamp()*1000))
+
+    print ("\nВведите год финала: ")
+    endYear = input()
+    print ("Введите месяц финала: ")
+    endMonth = input()
+    print ("Введите день финала: ")
+    endDay = input()
+    end = str(int(dt.datetime(int(endYear),int(endMonth),int(endDay)).timestamp()*1000))
+
+    par = {'symbol': symbol, 'interval': interval, 'startTime': start, 'endTime': end}
+
+    data = pd.DataFrame(json.loads(requests.get(url, params= par).text))
+
+    #format columns name
+    data.columns = ['datetime', 'open', 'high', 'low', 'close', 'volume','close_time', 'qav', 'num_trades','taker_base_vol', 'taker_quote_vol', 'ignore']
+    
+    data.index = [dt.datetime.fromtimestamp(x/1000.0) for x in data.datetime]
+
+    data=data.astype(float)
+
+    data.to_csv(symbol+'.csv', index = 1, header=True)
+
+
+
 def TelegramBot(message,path):
     try:
         teleBot = telegram.Bot("1960666049:AAFEaBBvpvNM37i2rCt70JIC1w-Rt1g_v1M")
@@ -1158,6 +1140,7 @@ def Menu():
     print ("1 - Начать торговлю с начала")
     print ("2 - Продолжить торговлю")
     print ("3 - Продать валюту")
+    print ("4 - Произвести выгрузку")
     print ("9 - Выйти из приложения\n")
     choice = input()
 
@@ -1202,6 +1185,16 @@ def Menu():
                 print(e)
                 print("-------------------------------------------------")
                 Menu()
+    elif (choice == "4"):
+        try:
+            LoadTimeStamp()
+        except Exception as e:
+            print("\n-------------------------------------------------")
+            print("Произошла ошибка:")
+
+            print(e)
+            print("-------------------------------------------------")
+            Menu()
     elif (choice == "0"):
         CheckBalance()
         Menu()
