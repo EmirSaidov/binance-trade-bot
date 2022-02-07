@@ -12,12 +12,17 @@ from datetime import date
 from binance.enums import *
 from datetime import datetime
 from binance.client import Client
+from importlib import find_loader
 from openpyxl import load_workbook
 from requests.models import ChunkedEncodingError
 from binance.exceptions import BinanceAPIException, BinanceOrderException
 
 path = ""
 
+
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#! Gets Client for Binance API
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 def GetClient():
     wb2 = load_workbook(GetPath())
     ws2 = wb2.worksheets[1]
@@ -33,8 +38,11 @@ def GetClient():
     client = Client(api_key, api_secret)
     return client
 
-def CheckBalance():
 
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#! Check Balance for specified coin on the Client
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+def CheckBalance():
     wb2 = load_workbook(GetPath())
     ws2 = wb2.worksheets[1]
 
@@ -57,8 +65,9 @@ def CheckBalance():
     wb2.close()
 
 
-
-
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#! Hunging orders check for excel refresh
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 def AutoCleanCheckCascade(cascadeBuy,cascadeSold,path,cascadeLast,cascadeQuant):
     wbt = xw.Book(path)
     sheet = wbt.sheets[0]
@@ -68,14 +77,14 @@ def AutoCleanCheckCascade(cascadeBuy,cascadeSold,path,cascadeLast,cascadeQuant):
 
     if (cascadeBuyCell == cascadeSoldCell):
         print ("Все ордера в каскаде были завершенны")
+        
     if (cascadeBuyCell != cascadeSoldCell):
-
         buyCellFlag = 2000
+        
         while (buyCellFlag >= 6):
             cascadeBuySignal = sheet.range(str(cascadeBuy)+str(buyCellFlag)).value
-
+            
             if (cascadeBuySignal == 1.0):
-
                 wbtNew = xw.Book(GetPath())
                 sheetNew = wbtNew.sheets[0]
 
@@ -90,60 +99,442 @@ def AutoCleanCheckCascade(cascadeBuy,cascadeSold,path,cascadeLast,cascadeQuant):
 
                         sheetNew.range(str(cascadeBuy)+str(x)).value = "1"
 
-                        sheetNew.range(str(cascadeQuant)+str(x)).value = sheet.range(str(cascadeQuant)+str(buyCellFlag)).value
+                        sheetNew.range(str(cascadeQuant)+str(x)).value = sheet.range
+                        (str(cascadeQuant)+str(buyCellFlag)).value
 
-                        sheetNew.range(str(cascadeLast)+"1").value = sheet.range(str(cascadeLast)+"1").value
+                        sheetNew.range(str(cascadeLast)+"1").value = sheet.range
+                        (str(cascadeLast)+"1").value
 
                         wbtNew.save()
                         wbtNew.close()
 
                         print ("Все ордера в каскаде были скопированны")
-
                         break
 
                 break
             
             buyCellFlag = buyCellFlag - 1
-    
+            
     wbt.close()
 
 
-
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#! Obtain path of the excel file or save it
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 def GetPath():
-
     f = open("excelName.txt","a+")
     f.close()   
     f = open ("excelName.txt","r+")
     contents = f.read()
+    
     if (contents == ""):
         print ("Введите имя эксель файла (обязательно добавьте формат файла к концу имени например: .xlsx):\n")
         path = input()
         f.write(path)
+        
     else:
         path = contents
+        
     f.close()
     return path
 
 
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#! Get path of the excel file template
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 def GetPathTemplate():
-
     f = open("excelNameTemplate.txt","a+")
     f.close()   
     f = open ("excelNameTemplate.txt","r+")
     contents = f.read()
+    
     if (contents == ""):
         print ("Введите имя шаблон файла (обязательно добавьте формат файла к концу имени например: .xlsx):\n")
         path = input()
         f.write(path)
+        
     else:
         path = contents
+        
     f.close()
     return path
 
 
-def BuyOrder(allocFunds,btc_price,client,coin,c6,ws2,ws1,flag,assetExcel1,assetExcel2,wb2,buyFlag,quantFlag,path,buyOrderList,statusFlag,quantBuyFlag):
-    global ordersInProcess
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#! Fire order buy FUTURE
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# def BuyOrderFuture(btc_price,client,coin,
+#              ws2,ws1,flag,assetExcel1,assetExcel2,
+#              wb2,buyFlag,quantFlag,path,quantBuyFlag):
+#     #TODO add futures option
+#     while (buyFlag > 0):
+#         try:
+#             if (statusFlag == 0):
+#                 quant = float(allocFunds)/float(btc_price["price"])
 
+#                 info = client.get_symbol_info(coin)
+#                 step_size = [float(_['stepSize']) for _ in info['filters'] if _['filterType'] == 'LOT_SIZE'][0]
+#                 step_size = '%.8f' % step_size
+#                 step_size = step_size.rstrip('0')
+#                 decimals = len(step_size.split('.')[1])
+#                 final = math.floor(quant * 10.0001 ** decimals) / 10 ** decimals
+                
+#                 orderType = ws1.cell(row = 2, column = 10)
+                
+#                 if (orderType.value == "LIMIT"):
+#                     buy_order_limit = client.create_order(
+#                         symbol=coin,
+#                         side='BUY',
+#                         type='LIMIT',
+#                         timeInForce='GTC',
+#                         quantity=final,
+#                         price = int(c6))
+
+#                 elif (orderType.value == "MARKET"):
+#                     buy_order_limit = client.create_order(
+#                         symbol=coin,
+#                         side='BUY',
+#                         type='MARKET',
+#                         quantity=final)
+
+#                 print("\n\n-------------------------------------------------")
+#                 print (datetime.now(),"Ордер на покупку был выставлен:")
+#                 print("\n",buy_order_limit)
+#                 print("-------------------------------------------------")
+
+#                 buyOrderList.append(buy_order_limit["orderId"])
+
+#                 buyFlag = 10
+#                 break
+
+#             if (statusFlag == 1):
+#                 for i in buyOrderList:
+#                     order_confirm = client.get_order(
+#                         symbol = coin,
+#                         orderId = i
+#                     )
+                    
+#                     if (order_confirm["status"]== "FILLED"):
+#                         cBoughtQuant = ws2.cell(row = flag, column = quantBuyFlag)
+#                         cBoughtQuant.value = float(btc_price["price"]) * float(order_confirm["executedQty"])
+
+#                         cBoughtPrice = ws2.cell(row = flag, column = 10)
+#                         cBoughtPrice.value = float(btc_price["price"])
+
+#                         balanceFirst = client.get_asset_balance(asset=assetExcel1)
+#                         сFirstAssetBalance = ws1.cell(row = 2, column = 8)
+#                         сFirstAssetBalance.value = balanceFirst["free"]
+
+#                         balanceSecond = client.get_asset_balance(asset=assetExcel2)
+#                         cSecondAssetBalance = ws1.cell(row = 2, column = 9)
+#                         cSecondAssetBalance.value = balanceSecond["free"]
+
+#                         cBoughtLastQuant = ws2.cell(row = 1, column = quantFlag)
+#                         cBoughtLastQuant.value = order_confirm["executedQty"]
+
+#                         wb2.save(path)
+                        
+#                         print("\n\n-------------------------------------------------")
+#                         print(datetime.now(),"покупка прошла успешно, данные о покупке:")
+#                         print(order_confirm)
+
+#                         buyFlag = 10
+#                         time.sleep(15) 
+                        
+#                         cascade = 0
+
+#                         if (quantBuyFlag== 17):
+#                             cascade = 1
+#                         elif(quantBuyFlag==34): 
+#                             cascade = 2
+#                         elif(quantBuyFlag==51): 
+#                             cascade = 3  
+#                         elif(quantBuyFlag==68): 
+#                             cascade = 4
+#                         elif(quantBuyFlag==85): 
+#                             cascade = 5
+                            
+#                         TelegramBotOrder("Произошла покупка, Каскад: "
+#                                          +str(cascade)+" Кол-во: "
+#                                          +str(cBoughtQuant.value)+"; Цена: "
+#                                          +str(cBoughtPrice.value)+"; Баланс "
+#                                          +str(assetExcel1)+": "
+#                                          +str(сFirstAssetBalance.value)+"; Баланс "
+#                                          +str(assetExcel2)+": "
+#                                          +str(cSecondAssetBalance.value),path)
+                        
+#                     else:
+#                         client.cancel_order(symbol=coin, orderId=i)
+
+#                         print("Ордер не был заполнен, ордер был отменен, данные были удаленны")
+
+#                         c1 = ws2.cell(row = flag, column = 9)
+#                         c1.value = None
+
+#                         c2 = ws2.cell(row = flag, column = 10)
+#                         c2.value = None
+
+#                         c3 = ws2.cell(row = flag, column = 18)
+#                         c3.value = None
+
+#                         c4 = ws2.cell(row = flag, column = 35)
+#                         c4.value = None
+
+#                         c5 = ws2.cell(row = flag, column = 52)
+#                         c5.value = None
+                        
+#                         c6 = ws2.cell(row = flag, column = 69)
+#                         c6.value = None
+
+#                         c7 = ws2.cell(row = flag, column = 86)
+#                         c7.value = None
+
+#                         wb2.save(path)
+                        
+#                 break
+            
+#         except BinanceAPIException as e:      
+#             print(e)
+#             print(datetime.now(),
+#                   "Произошла ошибка во время подключения, количество оставшихся попыток: "
+#                   + str(buyFlag))
+
+#             TelegramBot("Произошла ошибка во время подключения с бинансом количество оставшихся попыток:"
+#                         + str(buyFlag)+ str(e),path)
+
+#             if (buyFlag > 0):
+#                 print ("Операция повторится через 5 секунд")
+#                 time.sleep(5) 
+
+#                 if (buyFlag == 1):
+#                     print ("Бот не смог подключиться данные о покупке были удаленны")
+
+#                     c1 = ws2.cell(row = flag, column = 9)
+#                     c1.value = None
+
+#                     c2 = ws2.cell(row = flag, column = 10)
+#                     c2.value = None
+
+#                     c3 = ws2.cell(row = flag, column = 18)
+#                     c3.value = None
+
+#                     c4 = ws2.cell(row = flag, column = 35)
+#                     c4.value = None
+
+#                     c5 = ws2.cell(row = flag, column = 52)
+#                     c5.value = None
+                    
+#                     c6 = ws2.cell(row = flag, column = 69)
+#                     c6.value = None
+
+#                     c7 = ws2.cell(row = flag, column = 86)
+#                     c7.value = None
+
+#                     wb2.save(path)
+
+#                     StartBot(path)
+
+#                 buyFlag = buyFlag - 1
+
+#             else:
+#                 StartBot(path)
+                
+#         except BinanceOrderException as e:
+#             # error handling goes here
+#             print(datetime.now(),
+#                   "Произошла ошибка во время проведения операции с бинансом сохраните этот код ошибки:")
+
+#             TelegramBot("Произошла ошибка во время проведения операции с бинансом бот был остановлен. Код ошибки:"
+#                         + str(e),path)
+
+#             print(e)
+#             Menu()
+            
+#         except Exception as e:
+#             print(datetime.now(),"Нету связи с интернетом бот попробует записать данные еще раз через 1 минуту "
+#                   + str(e))
+#             time.sleep(60) 
+
+
+# #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# #! Fire sell order FUTURE
+# #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# def SellOrderFuture(sellFlag,client,coin,ws1,ws2,
+#               flag,assetExcel1,assetExcel2,wb2,path,
+#               btc_price):
+#     #TODO Add futures option
+#     while (sellFlag > 0):            
+                            
+#         try:
+#             if (statusFlag == 0):
+#                 info = client.get_symbol_info(coin)
+#                 step_size = [float(_['stepSize']) 
+#                              for _ in info['filters'] 
+#                              if _['filterType'] == 'LOT_SIZE'][0]
+#                 step_size = '%.8f' % step_size
+#                 step_size = step_size.rstrip('0')
+#                 decimals = len(step_size.split('.')[1])
+#                 final = math.floor(assetQuant * 10.0001 ** decimals) / 10 ** decimals
+
+#                 orderType = ws1.cell(row = 2, column = 10)
+
+#                 if (orderType.value == "LIMIT"):
+#                     sell_order_limit = client.create_order(
+#                         symbol=coin,
+#                         side='SELL',
+#                         type='LIMIT',
+#                         timeInForce='GTC',
+#                         quantity=final,
+#                         price = int(c7))
+                
+#                 elif (orderType.value == "MARKET"):
+#                     sell_order_limit = client.create_order(
+#                         symbol=coin,
+#                         side='SELL',
+#                         type='MARKET',
+#                         quantity=final)
+
+#                 print("\n\n-------------------------------------------------")
+#                 print (datetime.now(),"Ордер на продажу был выставлен:")
+#                 print("\n",sell_order_limit)
+#                 print("-------------------------------------------------")
+
+#                 sellOrderList.append(sell_order_limit["orderId"])
+#                 sellFlag = 10
+
+#                 break
+
+#             elif (statusFlag == 1):
+#                 dict_pairs = sellOrderDict.items()
+#                 pairs_iterator = iter(dict_pairs)
+                
+#                 for i in sellOrderList:
+#                     order_confirm = client.get_order(
+#                         symbol = coin,
+#                         orderId = i
+#                     )
+
+#                     if (order_confirm["status"]== "FILLED"):
+#                         SellPair = next(pairs_iterator)
+
+#                         cBoughtQuant = ws2.cell(row = flag, column = SellPair[0])
+#                         cBoughtQuant.value = float(btc_price["price"]) * float(order_confirm["executedQty"])
+
+#                         cBoughtPrice = ws2.cell(row = flag, column = 10)
+#                         cBoughtPrice.value = float(btc_price["price"])
+
+#                         balanceFirst = client.get_asset_balance(asset=assetExcel1)
+#                         сFirstAssetBalance = ws1.cell(row = 2, column = 8)
+#                         сFirstAssetBalance.value = balanceFirst["free"]
+
+#                         balanceSecond = client.get_asset_balance(asset=assetExcel2)
+#                         cSecondAssetBalance = ws1.cell(row = 2, column = 9)
+#                         cSecondAssetBalance.value = balanceSecond["free"]
+
+#                         wb2.save(path)
+
+#                         print("\n\n-------------------------------------------------")
+#                         print(datetime.now(),"продажа прошла успешно, данные о продаже:")
+#                         print(order_confirm)
+                        
+#                         cascade = 0
+
+#                         if (SellPair[0]== 20):
+#                             cascade = 1
+#                         elif(SellPair[0]==37): 
+#                             cascade = 2
+#                         elif(SellPair[0]==54): 
+#                             cascade = 3  
+#                         elif(SellPair[0]==71): 
+#                             cascade = 4
+#                         elif(SellPair[0]==88): 
+#                             cascade = 5
+
+#                         TelegramBotOrder("Произошла продажа, Каскад: "
+#                                          +str(cascade)+" Кол-во: "
+#                                          +str(cBoughtQuant.value)+"; Цена: "
+#                                          +str(cBoughtPrice.value)+"; Баланс "
+#                                          +str(assetExcel1)+": "
+#                                          +str(сFirstAssetBalance.value)+"; Баланс "
+#                                          +str(assetExcel2)+": "
+#                                          +str(cSecondAssetBalance.value),path)
+                        
+#                         sellFlag = 10
+#                         time.sleep(15) 
+                        
+#                     else:
+#                         SellPair = next(pairs_iterator)
+
+#                         client.cancel_order(symbol=coin, orderId=i)
+
+#                         print("Ордер не был заполнен, ордер был отменен, данные были удаленны")
+
+#                         c1 = ws2.cell(row = flag, column = 9)
+#                         c1.value = None
+
+#                         c2 = ws2.cell(row = flag, column = 10)
+#                         c2.value = None
+
+#                         c3 = ws2.cell(row = flag, column = SellPair[1])
+#                         c3.value = None
+                    
+#                         wb2.save(path)
+
+#                 break
+        
+#         except BinanceAPIException as e:
+#             # error handling goes here
+#             print(datetime.now(),"Произошла ошибка во время подключения, количество оставшихся попыток: "
+#                 + str(sellFlag))
+
+#             TelegramBot("Произошла ошибка во время подключения с бинансом количество оставшихся попыток:" 
+#                 + str(sellFlag)+ str(e),path)
+
+#             print(e)
+            
+#             if (sellFlag > 0):
+#                 print ("Операция повторится через 5 секунд")
+#                 time.sleep(5) 
+                
+#                 if (sellFlag == 1):
+#                     print ("Бот не смог подключиться данные о продаже были удаленны")
+
+#                     c1 = ws2.cell(row = flag, column = signalSellFlag)
+#                     c1.value = None
+
+#                     wb2.save(path)
+#                     StartBot(path)
+
+#                 sellFlag = sellFlag - 1
+
+#             else:
+#                 StartBot(path)
+                
+#         except BinanceOrderException as e:
+#             # error handling goes here
+#             print(datetime.now(),
+#                 "Произошла ошибка во время проведения операции с бинансом сохраните этот код ошибки:")
+
+#             TelegramBot("Произошла ошибка во время проведения операции с бинансом бот был остановлен. Код ошибки:"
+#                 + str(e),path)
+
+#             print(e)
+#             Menu()
+            
+#         except Exception as e:
+#             print(datetime.now(),"Нету связи с интернетом бот попробует записать данные еще раз через 1 минуту "
+#                 + str(e))
+#             time.sleep(60) 
+
+
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#! Fire order buy
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+def BuyOrder(allocFunds,btc_price,client,coin,c6,
+             ws2,ws1,flag,assetExcel1,assetExcel2,
+             wb2,buyFlag,quantFlag,path,buyOrderList,
+             statusFlag,quantBuyFlag):
+    #TODO add futures option
     while (buyFlag > 0):
         try:
             if (statusFlag == 0):
@@ -157,7 +548,7 @@ def BuyOrder(allocFunds,btc_price,client,coin,c6,ws2,ws1,flag,assetExcel1,assetE
                 final = math.floor(quant * 10.0001 ** decimals) / 10 ** decimals
                 
                 orderType = ws1.cell(row = 2, column = 10)
-
+                
                 if (orderType.value == "LIMIT"):
                     buy_order_limit = client.create_order(
                         symbol=coin,
@@ -181,10 +572,7 @@ def BuyOrder(allocFunds,btc_price,client,coin,c6,ws2,ws1,flag,assetExcel1,assetE
 
                 buyOrderList.append(buy_order_limit["orderId"])
 
-                # ordersInProcess.append(["buy",buy_order_limit["orderId"],flag,quantBuyFlag,10])
-
                 buyFlag = 10
-
                 break
 
             if (statusFlag == 1):
@@ -193,6 +581,7 @@ def BuyOrder(allocFunds,btc_price,client,coin,c6,ws2,ws1,flag,assetExcel1,assetE
                         symbol = coin,
                         orderId = i
                     )
+                    
                     if (order_confirm["status"]== "FILLED"):
                         cBoughtQuant = ws2.cell(row = flag, column = quantBuyFlag)
                         cBoughtQuant.value = float(btc_price["price"]) * float(order_confirm["executedQty"])
@@ -233,10 +622,15 @@ def BuyOrder(allocFunds,btc_price,client,coin,c6,ws2,ws1,flag,assetExcel1,assetE
                         elif(quantBuyFlag==85): 
                             cascade = 5
                             
-                        TelegramBotOrder("Произошла покупка, Каскад: "+str(cascade)+" Кол-во: "+str(cBoughtQuant.value)+"; Цена: "+str(cBoughtPrice.value)+"; Баланс "+str(assetExcel1)+": "+str(сFirstAssetBalance.value)+"; Баланс "+str(assetExcel2)+": "+str(cSecondAssetBalance.value),path)
+                        TelegramBotOrder("Произошла покупка, Каскад: "
+                                         +str(cascade)+" Кол-во: "
+                                         +str(cBoughtQuant.value)+"; Цена: "
+                                         +str(cBoughtPrice.value)+"; Баланс "
+                                         +str(assetExcel1)+": "
+                                         +str(сFirstAssetBalance.value)+"; Баланс "
+                                         +str(assetExcel2)+": "
+                                         +str(cSecondAssetBalance.value),path)
                         
-
-                
                     else:
                         client.cancel_order(symbol=coin, orderId=i)
 
@@ -264,16 +658,19 @@ def BuyOrder(allocFunds,btc_price,client,coin,c6,ws2,ws1,flag,assetExcel1,assetE
                         c7.value = None
 
                         wb2.save(path)
+                        
                 break
             
         except BinanceAPIException as e:      
             print(e)
-            print(datetime.now(),"Произошла ошибка во время подключения, количество оставшихся попыток: "+ str(buyFlag))
+            print(datetime.now(),
+                  "Произошла ошибка во время подключения, количество оставшихся попыток: "
+                  + str(buyFlag))
 
-            TelegramBot("Произошла ошибка во время подключения с бинансом количество оставшихся попыток:" + str(buyFlag)+ str(e),path)
+            TelegramBot("Произошла ошибка во время подключения с бинансом количество оставшихся попыток:"
+                        + str(buyFlag)+ str(e),path)
 
             if (buyFlag > 0):
-
                 print ("Операция повторится через 5 секунд")
                 time.sleep(5) 
 
@@ -309,25 +706,40 @@ def BuyOrder(allocFunds,btc_price,client,coin,c6,ws2,ws1,flag,assetExcel1,assetE
 
             else:
                 StartBot(path)
+                
         except BinanceOrderException as e:
             # error handling goes here
-            print(datetime.now(),"Произошла ошибка во время проведения операции с бинансом сохраните этот код ошибки:")
+            print(datetime.now(),
+                  "Произошла ошибка во время проведения операции с бинансом сохраните этот код ошибки:")
 
-            TelegramBot("Произошла ошибка во время проведения операции с бинансом бот был остановлен. Код ошибки:" + str(e),path)
+            TelegramBot("Произошла ошибка во время проведения операции с бинансом бот был остановлен. Код ошибки:"
+                        + str(e),path)
 
             print(e)
             Menu()
+            
         except Exception as e:
-            print(datetime.now(),"Нету связи с интернетом бот попробует записать данные еще раз через 1 минуту "+ str(e))
+            print(datetime.now(),"Нету связи с интернетом бот попробует записать данные еще раз через 1 минуту "
+                  + str(e))
             time.sleep(60) 
 
 
-def SellOrder(sellFlag,assetQuant,client,coin,c7,ws1,ws2,flag,assetExcel1,assetExcel2,wb2,path,sellOrderList,statusFlag,sellOrderDict,btc_price,signalSellFlag):
-    while (sellFlag > 0):                                
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#! Fire sell order
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+def SellOrder(sellFlag,assetQuant,client,coin,c7,ws1,ws2,
+              flag,assetExcel1,assetExcel2,wb2,path,
+              sellOrderList,statusFlag,sellOrderDict,
+              btc_price,signalSellFlag):
+    #TODO Add futures option
+    while (sellFlag > 0):            
+                            
         try:
             if (statusFlag == 0):
                 info = client.get_symbol_info(coin)
-                step_size = [float(_['stepSize']) for _ in info['filters'] if _['filterType'] == 'LOT_SIZE'][0]
+                step_size = [float(_['stepSize']) 
+                             for _ in info['filters'] 
+                             if _['filterType'] == 'LOT_SIZE'][0]
                 step_size = '%.8f' % step_size
                 step_size = step_size.rstrip('0')
                 decimals = len(step_size.split('.')[1])
@@ -364,6 +776,7 @@ def SellOrder(sellFlag,assetQuant,client,coin,c7,ws1,ws2,flag,assetExcel1,assetE
             elif (statusFlag == 1):
                 dict_pairs = sellOrderDict.items()
                 pairs_iterator = iter(dict_pairs)
+                
                 for i in sellOrderList:
                     order_confirm = client.get_order(
                         symbol = coin,
@@ -406,12 +819,18 @@ def SellOrder(sellFlag,assetQuant,client,coin,c7,ws1,ws2,flag,assetExcel1,assetE
                         elif(SellPair[0]==88): 
                             cascade = 5
 
-                        TelegramBotOrder("Произошла продажа, Каскад: "+str(cascade)+" Кол-во: "+str(cBoughtQuant.value)+"; Цена: "+str(cBoughtPrice.value)+"; Баланс "+str(assetExcel1)+": "+str(сFirstAssetBalance.value)+"; Баланс "+str(assetExcel2)+": "+str(cSecondAssetBalance.value),path)
+                        TelegramBotOrder("Произошла продажа, Каскад: "
+                                         +str(cascade)+" Кол-во: "
+                                         +str(cBoughtQuant.value)+"; Цена: "
+                                         +str(cBoughtPrice.value)+"; Баланс "
+                                         +str(assetExcel1)+": "
+                                         +str(сFirstAssetBalance.value)+"; Баланс "
+                                         +str(assetExcel2)+": "
+                                         +str(cSecondAssetBalance.value),path)
                         
                         sellFlag = 10
                         time.sleep(15) 
                         
-
                     else:
                         SellPair = next(pairs_iterator)
 
@@ -428,21 +847,21 @@ def SellOrder(sellFlag,assetQuant,client,coin,c7,ws1,ws2,flag,assetExcel1,assetE
                         c3 = ws2.cell(row = flag, column = SellPair[1])
                         c3.value = None
                     
-                        
                         wb2.save(path)
 
                 break
         
         except BinanceAPIException as e:
             # error handling goes here
-            print(datetime.now(),"Произошла ошибка во время подключения, количество оставшихся попыток: "+ str(sellFlag))
+            print(datetime.now(),"Произошла ошибка во время подключения, количество оставшихся попыток: "
+                + str(sellFlag))
 
-            TelegramBot("Произошла ошибка во время подключения с бинансом количество оставшихся попыток:" + str(sellFlag)+ str(e),path)
+            TelegramBot("Произошла ошибка во время подключения с бинансом количество оставшихся попыток:" 
+                + str(sellFlag)+ str(e),path)
 
             print(e)
             
             if (sellFlag > 0):
-
                 print ("Операция повторится через 5 секунд")
                 time.sleep(5) 
                 
@@ -459,37 +878,35 @@ def SellOrder(sellFlag,assetQuant,client,coin,c7,ws1,ws2,flag,assetExcel1,assetE
 
             else:
                 StartBot(path)
+                
         except BinanceOrderException as e:
             # error handling goes here
-            print(datetime.now(),"Произошла ошибка во время проведения операции с бинансом сохраните этот код ошибки:")
+            print(datetime.now(),
+                "Произошла ошибка во время проведения операции с бинансом сохраните этот код ошибки:")
 
-            TelegramBot("Произошла ошибка во время проведения операции с бинансом бот был остановлен. Код ошибки:" + str(e),path)
+            TelegramBot("Произошла ошибка во время проведения операции с бинансом бот был остановлен. Код ошибки:"
+                + str(e),path)
 
             print(e)
             Menu()
+            
         except Exception as e:
-            print(datetime.now(),"Нету связи с интернетом бот попробует записать данные еще раз через 1 минуту "+ str(e))
+            print(datetime.now(),"Нету связи с интернетом бот попробует записать данные еще раз через 1 минуту "
+                + str(e))
             time.sleep(60) 
 
 
-
-
-
-
-
-
-
-
-
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#! Sell specified amount of specified coin on Client
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 def SellFunc(path):
     try:
-
         wb2 = load_workbook(path)
         ws2 = wb2.worksheets[1]
         ws1 = wb2.worksheets[0]
         wb2.save(path)
+        
     except Exception as e:
-
         print("\n-------------------------------------------------")
         print("Введенное вами имя эксель файла не найденно попробуйте еще раз")
         print("-------------------------------------------------")
@@ -537,7 +954,6 @@ def SellFunc(path):
 
         while (sellFlag > 0):                                
             try:
-
                 info = client.get_symbol_info(coin)
                 step_size = [float(_['stepSize']) for _ in info['filters'] if _['filterType'] == 'LOT_SIZE'][0]
                 step_size = '%.8f' % step_size
@@ -554,7 +970,6 @@ def SellFunc(path):
                 print("\n\n-------------------------------------------------")
                 print(datetime.now(),"Произошла продажа, данные о продаже:")
                 print(sell_order_limit)
-                
 
                 balanceFirst = client.get_asset_balance(asset=assetExcel1)
                 сFirstAssetBalance = ws2.cell(row = 2, column = 8)
@@ -569,15 +984,14 @@ def SellFunc(path):
                 sellFlag = 10
 
                 Menu()
-
                 break
             
             except BinanceAPIException as e:
                 # error handling goes here
-                print(datetime.now(),"Произошла ошибка во время подключения, количество оставшихся попыток: "+ str(sellFlag))
+                print(datetime.now(),"Произошла ошибка во время подключения, количество оставшихся попыток: "
+                    + str(sellFlag))
                 print(e)
                 
-
                 if (sellFlag > 0):
                     sellFlag = sellFlag - 1
 
@@ -586,21 +1000,22 @@ def SellFunc(path):
 
                     if (sellFlag == 0):
                             Menu()
+
                 else:
                     Menu()
+                    
             except BinanceOrderException as e:
                 # error handling goes here
-                print(datetime.now(),"Произошла ошибка во время проведения операции с бинансом сохраните этот код ошибки:")
+                print(datetime.now(),
+                    "Произошла ошибка во время проведения операции с бинансом сохраните этот код ошибки:")
                 print(e)
                 Menu()
 
 
-
-
-
-
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#! Refresh excel file if limit of cells is reached
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 def ClearExcel():
-
     newPath = GetPathTemplate()
 
     try:
@@ -613,7 +1028,6 @@ def ClearExcel():
         f.write(newPath)
         f.close()   
 
-
     except Exception as e:
         print("\n-------------------------------------------------")
         print("Введенное вами имя эксель файла не найденно попробуйте еще раз")
@@ -622,13 +1036,15 @@ def ClearExcel():
         Menu()
 
 
-
-
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#! Body of the bot
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#TODO simplify the logic decrease complexity
 def MainFunc(path):
-
     try:
         wbt2 = xw.Book("dontTouch.xlsx")
         wbt2.app.visible = False
+        
     except Exception as e:
         if ("No such file" in str(e)):
             wbt2 = xw.Book()
@@ -642,8 +1058,8 @@ def MainFunc(path):
         ws2 = wb2.worksheets[1]
         ws1 = wb2.worksheets[0]
         wb2.save(path)
+        
     except Exception as e:
-
         print("\n-------------------------------------------------")
         print("Введенное вами имя эксель файла не найденно попробуйте еще раз")
         print("-------------------------------------------------")
@@ -666,15 +1082,15 @@ def MainFunc(path):
 
     asset_cell2 = ws2.cell(row = 2, column = 7)
     assetExcel2 = asset_cell2.value
+    
+    global botType 
+    botType = ws2.cell(row = 2, column = 11).value
 
     asset_test1 = client.get_asset_balance(asset=assetExcel1)
 
     asset_test2 = client.get_asset_balance(asset=assetExcel2)
 
     coin_test = client.get_symbol_ticker(symbol=coin)
-
-
-  
 
     try:
         allocFunds = int(funds_cell.value)
@@ -691,10 +1107,15 @@ def MainFunc(path):
         print(e)
         Menu()
 
-    
-
     if (str(orderTime) == "1"):
-        timesList = ['00','01','02','03','04','05','06','07','08','09','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38','39','40','41','42','43','44','45','46','47','48','49','50','51','52','53','54','55','56','57','58','59',]
+        timesList = ['00','01','02','03','04','05','06','07',
+                     '08','09','10','11','12','13','14','15',
+                     '16','17','18','19','20','21','22','23',
+                     '24','25','26','27','28','29','30','31',
+                     '32','33','34','35','36','37','38','39',
+                     '40','41','42','43','44','45','46','47',
+                     '48','49','50','51','52','53','54','55',
+                     '56','57','58','59']
     
     elif (str(orderTime) == "5"):
         timesList = ["00","05","10","15","20","25","30","35","40","45","50","55"]
@@ -733,12 +1154,13 @@ def MainFunc(path):
         c1 = ws2.cell(row = 1, column = 1)
         now = datetime.now()
         currentTime = now.strftime("%M")
+        
         if (currentTime in timesList):
-
             while (flag < 1048575):
                 c1 = ws2.cell(row = flag, column = 1)
 
                 if (flag == 1000):
+                    #TODO add futures bot
                     oldPath = GetPath()
 
                     ClearExcel()
@@ -764,7 +1186,6 @@ def MainFunc(path):
 
                     orderType = ws1.cell(row = 2, column = 10)
 
-
                     c3 = ws2.cell(row = flag, column = 6)
                     c3.value = float(btc_price["price"])
                     c3.number_format
@@ -774,236 +1195,302 @@ def MainFunc(path):
                     sheet = wbt.sheets[0]
                     flagstr = str(flag)
                     
-                    buySignal1 = sheet.range('R'+flagstr).value
-                    buySignal2 = sheet.range('AI'+flagstr).value
-                    buySignal3 = sheet.range('AZ'+flagstr).value
-                    buySignal4 = sheet.range('BQ'+flagstr).value
-                    buySignal5 = sheet.range('CH'+flagstr).value
-
-                    sellSignal1 = sheet.range('U'+flagstr).value
-                    sellSignal2 = sheet.range('AL'+flagstr).value
-                    sellSignal3 = sheet.range('BC'+flagstr).value
-                    sellSignal4 = sheet.range('BT'+flagstr).value
-                    sellSignal5 = sheet.range('CK'+flagstr).value
-
-                    loopFlag = 0
-
-                    outerStatusFlag = 0
-
-                    innerStatusFlag = 0
-
-                    buyOrderList = []
-                    sellOrderList = []
-
-                    sellOrderDict = {}
-
-
-
-                    if (buySignal1 == 1):
-                        wbt = xw.Book(path)
-                        sheet = wbt.sheets[0]
-                        c6 = sheet.range('S'+flagstr).value
-                        print(c6)
-                        wbt.close()
-
-                        quantBuyFlag = 17
-                        quantFlag = 14
-
-                        BuyOrder(allocFunds,btc_price,client,coin,c6,ws2,ws1,flag,assetExcel1,assetExcel2,wb2,buyFlag,quantFlag,path,buyOrderList,outerStatusFlag,quantBuyFlag)
-
-                        loopFlag = 1
-                        innerStatusFlag = 1
-                    
-                    if (buySignal2 == 1):
-                        wbt = xw.Book(path)
-                        sheet = wbt.sheets[0]
-                        c6 = sheet.range('AJ'+flagstr).value
-                        print(c6)
-                        wbt.close()
-
-                        quantBuyFlag = 34
-                        quantFlag = 31
-
-                        BuyOrder(allocFunds,btc_price,client,coin,c6,ws2,ws1,flag,assetExcel1,assetExcel2,wb2,buyFlag,quantFlag,path,buyOrderList,outerStatusFlag,quantBuyFlag)
-
-                        loopFlag = 1
-                        innerStatusFlag = 1
-
-
-                    if (buySignal3 == 1):
-                        wbt = xw.Book(path)
-                        sheet = wbt.sheets[0]
-                        c6 = sheet.range('BA'+flagstr).value
-                        print(c6)
-                        wbt.close()
-
-                        quantBuyFlag = 51
-                        quantFlag = 48
-
-                        BuyOrder(allocFunds,btc_price,client,coin,c6,ws2,ws1,flag,assetExcel1,assetExcel2,wb2,buyFlag,quantFlag,path,buyOrderList,outerStatusFlag,quantBuyFlag)
-
-                        loopFlag = 1
-                        innerStatusFlag = 1
-
-
-                    if (buySignal4 == 1):
-                        wbt = xw.Book(path)
-                        sheet = wbt.sheets[0]
-                        c6 = sheet.range('BR'+flagstr).value
-                        print(c6)
-                        wbt.close()
-
-                        quantBuyFlag = 68
-                        quantFlag = 65
-
-                        BuyOrder(allocFunds,btc_price,client,coin,c6,ws2,ws1,flag,assetExcel1,assetExcel2,wb2,buyFlag,quantFlag,path,buyOrderList,outerStatusFlag,quantBuyFlag)
-
-                        loopFlag = 1
-                        innerStatusFlag = 1
-
+                    #TODO add futures bot
+                    if (botType == "Future"):
+                        buySignalFuture = sheet.range('R'+flagstr).value
+                        sellSignalFuture = sheet.range('U'+flagstr).value
                         
+                        if (buySignalFuture == 1):
+                            wbt = xw.Book(path)
+                            sheet = wbt.sheets[0]
+                            quantToBuy = sheet.range('AJ'+flagstr).value
 
-                    if (buySignal5 == 1):
-                        wbt = xw.Book(path)
-                        sheet = wbt.sheets[0]
-                        c6 = sheet.range('CI'+flagstr).value
-                        print(c6)
-                        wbt.close()
+                            print(float(btc_price["price"]))
+                            wbt.close()
 
-                        quantBuyFlag = 85
-                        quantFlag = 82
+                            quantBuyFlag = 37
+                            quantFlag = 37
 
-                        BuyOrder(allocFunds,btc_price,client,coin,c6,ws2,ws1,flag,assetExcel1,assetExcel2,wb2,buyFlag,quantFlag,path,buyOrderList,outerStatusFlag,quantBuyFlag)
+                            # BuyOrderFuture(allocFunds,btc_price,client,coin,c6,ws2,
+                            #         ws1,flag,assetExcel1,assetExcel2,wb2,
+                            #         buyFlag,quantFlag,path,buyOrderList,
+                            #         outerStatusFlag,quantBuyFlag)
+                            
+                        if (sellSignalFuture == 1):
+                            wbt = xw.Book(path)
+                            sheet = wbt.sheets[0]
+                            quantToSell = sheet.range('AI'+flagstr).value
 
-                        loopFlag = 1
-                        innerStatusFlag = 1
-
-
-
-
-                    if (sellSignal1 == 1):
-                        wbt = xw.Book(path)
-                        sheet = wbt.sheets[0]
-                        c7 = sheet.range('V'+flagstr).value
-                        assetQuant = float(sheet.range('N1').value)
+                            print(float(btc_price["price"]))
+                            wbt.close()
+                            
+                            # SellOrderFuture(sellFlag,assetQuant,client,coin,c7,ws1,ws2,
+                                    # flag,assetExcel1,assetExcel2,wb2,path,
+                                    # sellOrderList,outerStatusFlag,
+                                    # sellOrderDict,btc_price,signalSellFlag)
+                            
+                        else:
+                            print("\n-------------------------------------------------")
+                            print (datetime.now(),"Данные были введенны в таблицу, никакого действия не было обнаруженно, бот продолжит работать")
+                            print("-------------------------------------------------")
+                            wbt.close()
+                            break
                         
-                        quantSellFlag = 20
-                        signalSellFlag = 21
+                    elif (botType == "Spot"):
+                        buySignal1 = sheet.range('R'+flagstr).value
+                        buySignal2 = sheet.range('AI'+flagstr).value
+                        buySignal3 = sheet.range('AZ'+flagstr).value
+                        buySignal4 = sheet.range('BQ'+flagstr).value
+                        buySignal5 = sheet.range('CH'+flagstr).value
 
-                        sellOrderDict[quantSellFlag]=signalSellFlag
+                        sellSignal1 = sheet.range('U'+flagstr).value
+                        sellSignal2 = sheet.range('AL'+flagstr).value
+                        sellSignal3 = sheet.range('BC'+flagstr).value
+                        sellSignal4 = sheet.range('BT'+flagstr).value
+                        sellSignal5 = sheet.range('CK'+flagstr).value
 
-                        print(c7)
-                        wbt.close()
+                        loopFlag = 0
+                        outerStatusFlag = 0
+                        innerStatusFlag = 0
                         
-                        SellOrder(sellFlag,assetQuant,client,coin,c7,ws1,ws2,flag,assetExcel1,assetExcel2,wb2,path,sellOrderList,outerStatusFlag,sellOrderDict,btc_price,signalSellFlag)
-                        
-                        loopFlag = 1
-                        innerStatusFlag = 1
-
-                    
-                    if (sellSignal2 == 1):
-                        wbt = xw.Book(path)
-                        sheet = wbt.sheets[0]
-                        c7 = sheet.range('AM'+flagstr).value
-                        assetQuant = float(sheet.range('AE1').value)
-                        quantSellFlag = 37
-                        signalSellFlag = 38
-
-                        sellOrderDict[quantSellFlag]=signalSellFlag
-
-                        print(c7)
-                        wbt.close()
-                        
-                        SellOrder(sellFlag,assetQuant,client,coin,c7,ws1,ws2,flag,assetExcel1,assetExcel2,wb2,path,sellOrderList,outerStatusFlag,sellOrderDict,btc_price,signalSellFlag)
-                        
-                        loopFlag = 1
-                        innerStatusFlag = 1
-
-                    if (sellSignal3 == 1):
-                        wbt = xw.Book(path)
-                        sheet = wbt.sheets[0]
-                        c7 = sheet.range('BD'+flagstr).value
-                        assetQuant = float(sheet.range('AV1').value)
-                        quantSellFlag = 54
-                        signalSellFlag = 55
-
-                        sellOrderDict[quantSellFlag]=signalSellFlag
-
-                        print(c7)
-                        wbt.close()
-                        
-                        SellOrder(sellFlag,assetQuant,client,coin,c7,ws1,ws2,flag,assetExcel1,assetExcel2,wb2,path,sellOrderList,outerStatusFlag,sellOrderDict,btc_price,signalSellFlag)
-                        
-                        loopFlag = 1
-                        innerStatusFlag = 1
-
-                    if (sellSignal4 == 1):
-                        wbt = xw.Book(path)
-                        sheet = wbt.sheets[0]
-                        c7 = sheet.range('BU'+flagstr).value
-                        assetQuant = float(sheet.range('BM1').value)
-                        quantSellFlag = 71  
-                        signalSellFlag = 72
-
-                        sellOrderDict[quantSellFlag]=signalSellFlag
-
-                        print(c7)
-                        wbt.close()
-                        
-                        SellOrder(sellFlag,assetQuant,client,coin,c7,ws1,ws2,flag,assetExcel1,assetExcel2,wb2,path,sellOrderList,outerStatusFlag,sellOrderDict,btc_price,signalSellFlag)
-                        
-                        loopFlag = 1
-                        innerStatusFlag = 1
-
-                    if (sellSignal5 == 1):
-                        wbt = xw.Book(path)
-                        sheet = wbt.sheets[0]
-                        c7 = sheet.range('CL'+flagstr).value
-                        assetQuant = float(sheet.range('CD1').value)
-                        quantSellFlag = 88
-                        signalSellFlag = 89
-
-                        sellOrderDict[quantSellFlag]=signalSellFlag
-
-                        print(c7)
-                        wbt.close()
-                                                
-                        SellOrder(sellFlag,assetQuant,client,coin,c7,ws1,ws2,flag,assetExcel1,assetExcel2,wb2,path,sellOrderList,outerStatusFlag,sellOrderDict,btc_price,signalSellFlag)
-                        
-                        loopFlag = 1
-                        innerStatusFlag = 1
-
-                    if (innerStatusFlag == 1):
-
-                        if (orderType == "LIMIT"):
-                            print ("Все ордера были выставленны, ожидайте 2 минуты для подтверждения")
-                            time.sleep(120) 
-                        
-                        if (orderType == "MARKET"):
-                            print ("Все ордера были выставленны, ожидайте 5 секунд для подтверждения")
-                            time.sleep(15) 
-                        
-                        if(len(buyOrderList)>0):
-                            BuyOrder(allocFunds,btc_price,client,coin,c6,ws2,ws1,flag,assetExcel1,assetExcel2,wb2,buyFlag,quantFlag,path,buyOrderList,1,quantBuyFlag)
-                        if(len(sellOrderList)>0):
-                            SellOrder(sellFlag,assetQuant,client,coin,c7,ws1,ws2,flag,assetExcel1,assetExcel2,wb2,path,sellOrderList,1,sellOrderDict,btc_price,signalSellFlag)
                         buyOrderList = []
                         sellOrderList = []
                         sellOrderDict = {}
+                    
+                        if (buySignal1 == 1):
+                            wbt = xw.Book(path)
+                            sheet = wbt.sheets[0]
+                            c6 = sheet.range('S'+flagstr).value
+                            print(c6)
+                            wbt.close()
 
-                    if (loopFlag == 1):
-                        break
+                            quantBuyFlag = 17
+                            quantFlag = 14
 
-                    else:
-                        print("\n-------------------------------------------------")
-                        print (datetime.now(),"Данные были введенны в таблицу, никакого действия не было обнаруженно, бот продолжит работать")
-                        print("-------------------------------------------------")
-                        wbt.close()
-                        break
+                            BuyOrder(allocFunds,btc_price,client,coin,c6,ws2,
+                                    ws1,flag,assetExcel1,assetExcel2,wb2,
+                                    buyFlag,quantFlag,path,buyOrderList,
+                                    outerStatusFlag,quantBuyFlag)
+
+                            loopFlag = 1
+                            innerStatusFlag = 1
+                        
+                        if (buySignal2 == 1):
+                            wbt = xw.Book(path)
+                            sheet = wbt.sheets[0]
+                            c6 = sheet.range('AJ'+flagstr).value
+                            print(c6)
+                            wbt.close()
+
+                            quantBuyFlag = 34
+                            quantFlag = 31
+
+                            BuyOrder(allocFunds,btc_price,client,coin,c6,ws2,
+                                    ws1,flag,assetExcel1,assetExcel2,wb2,
+                                    buyFlag,quantFlag,path,buyOrderList,
+                                    outerStatusFlag,quantBuyFlag)
+
+                            loopFlag = 1
+                            innerStatusFlag = 1
+
+                        if (buySignal3 == 1):
+                            wbt = xw.Book(path)
+                            sheet = wbt.sheets[0]
+                            c6 = sheet.range('BA'+flagstr).value
+                            print(c6)
+                            wbt.close()
+
+                            quantBuyFlag = 51
+                            quantFlag = 48
+
+                            BuyOrder(allocFunds,btc_price,client,coin,c6,ws2,
+                                    ws1,flag,assetExcel1,assetExcel2,wb2,
+                                    buyFlag,quantFlag,path,buyOrderList,
+                                    outerStatusFlag,quantBuyFlag)
+
+                            loopFlag = 1
+                            innerStatusFlag = 1
+
+                        if (buySignal4 == 1):
+                            wbt = xw.Book(path)
+                            sheet = wbt.sheets[0]
+                            c6 = sheet.range('BR'+flagstr).value
+                            print(c6)
+                            wbt.close()
+
+                            quantBuyFlag = 68
+                            quantFlag = 65
+
+                            BuyOrder(allocFunds,btc_price,client,coin,c6,ws2,
+                                    ws1,flag,assetExcel1,assetExcel2,wb2,
+                                    buyFlag,quantFlag,path,buyOrderList,
+                                    outerStatusFlag,quantBuyFlag)
+
+                            loopFlag = 1
+                            innerStatusFlag = 1
+
+                        if (buySignal5 == 1):
+                            wbt = xw.Book(path)
+                            sheet = wbt.sheets[0]
+                            c6 = sheet.range('CI'+flagstr).value
+                            print(c6)
+                            wbt.close()
+
+                            quantBuyFlag = 85
+                            quantFlag = 82
+
+                            BuyOrder(allocFunds,btc_price,client,coin,c6,ws2,
+                                    ws1,flag,assetExcel1,assetExcel2,wb2,
+                                    buyFlag,quantFlag,path,buyOrderList,
+                                    outerStatusFlag,quantBuyFlag)
+
+                            loopFlag = 1
+                            innerStatusFlag = 1
+
+                        #TODO add futures sell call
+                        if (sellSignal1 == 1):
+                            wbt = xw.Book(path)
+                            sheet = wbt.sheets[0]
+                            c7 = sheet.range('V'+flagstr).value
+                            assetQuant = float(sheet.range('N1').value)
+                            
+                            quantSellFlag = 20
+                            signalSellFlag = 21
+
+                            sellOrderDict[quantSellFlag]=signalSellFlag
+
+                            print(c7)
+                            wbt.close()
+                            
+                            SellOrder(sellFlag,assetQuant,client,coin,c7,ws1,ws2,
+                                    flag,assetExcel1,assetExcel2,wb2,path,
+                                    sellOrderList,outerStatusFlag,
+                                    sellOrderDict,btc_price,signalSellFlag)
+                            
+                            loopFlag = 1
+                            innerStatusFlag = 1
+                        
+                        if (sellSignal2 == 1):
+                            wbt = xw.Book(path)
+                            sheet = wbt.sheets[0]
+                            c7 = sheet.range('AM'+flagstr).value
+                            assetQuant = float(sheet.range('AE1').value)
+                            quantSellFlag = 37
+                            signalSellFlag = 38
+
+                            sellOrderDict[quantSellFlag]=signalSellFlag
+
+                            print(c7)
+                            wbt.close()
+                            
+                            SellOrder(sellFlag,assetQuant,client,coin,c7,ws1,ws2,
+                                    flag,assetExcel1,assetExcel2,wb2,path,
+                                    sellOrderList,outerStatusFlag,
+                                    sellOrderDict,btc_price,signalSellFlag)
+                            
+                            loopFlag = 1
+                            innerStatusFlag = 1
+
+                        if (sellSignal3 == 1):
+                            wbt = xw.Book(path)
+                            sheet = wbt.sheets[0]
+                            c7 = sheet.range('BD'+flagstr).value
+                            assetQuant = float(sheet.range('AV1').value)
+                            quantSellFlag = 54
+                            signalSellFlag = 55
+
+                            sellOrderDict[quantSellFlag]=signalSellFlag
+
+                            print(c7)
+                            wbt.close()
+                            
+                            SellOrder(sellFlag,assetQuant,client,coin,c7,ws1,ws2,
+                                    flag,assetExcel1,assetExcel2,wb2,path,
+                                    sellOrderList,outerStatusFlag,
+                                    sellOrderDict,btc_price,signalSellFlag)
+                            
+                            loopFlag = 1
+                            innerStatusFlag = 1
+
+                        if (sellSignal4 == 1):
+                            wbt = xw.Book(path)
+                            sheet = wbt.sheets[0]
+                            c7 = sheet.range('BU'+flagstr).value
+                            assetQuant = float(sheet.range('BM1').value)
+                            quantSellFlag = 71  
+                            signalSellFlag = 72
+
+                            sellOrderDict[quantSellFlag]=signalSellFlag
+
+                            print(c7)
+                            wbt.close()
+                            
+                            SellOrder(sellFlag,assetQuant,client,coin,c7,ws1,ws2,
+                                    flag,assetExcel1,assetExcel2,wb2,path,
+                                    sellOrderList,outerStatusFlag,
+                                    sellOrderDict,btc_price,signalSellFlag)
+                            
+                            loopFlag = 1
+                            innerStatusFlag = 1
+
+                        if (sellSignal5 == 1):
+                            wbt = xw.Book(path)
+                            sheet = wbt.sheets[0]
+                            c7 = sheet.range('CL'+flagstr).value
+                            assetQuant = float(sheet.range('CD1').value)
+                            quantSellFlag = 88
+                            signalSellFlag = 89
+
+                            sellOrderDict[quantSellFlag]=signalSellFlag
+
+                            print(c7)
+                            wbt.close()
+                                                    
+                            SellOrder(sellFlag,assetQuant,client,coin,c7,ws1,ws2,
+                                    flag,assetExcel1,assetExcel2,wb2,path,
+                                    sellOrderList,outerStatusFlag,
+                                    sellOrderDict,btc_price,signalSellFlag)
+                            
+                            loopFlag = 1
+                            innerStatusFlag = 1
+
+                        if (innerStatusFlag == 1):
+                            if (orderType == "LIMIT"):
+                                print ("Все ордера были выставленны, ожидайте 2 минуты для подтверждения")
+                                time.sleep(120) 
+                            
+                            if (orderType == "MARKET"):
+                                print ("Все ордера были выставленны, ожидайте 5 секунд для подтверждения")
+                                time.sleep(15) 
+                            
+                            if(len(buyOrderList)>0):
+                                BuyOrder(allocFunds,btc_price,client,coin,c6,ws2,
+                                        ws1,flag,assetExcel1,assetExcel2,wb2,
+                                        buyFlag,quantFlag,path,buyOrderList,
+                                        1,quantBuyFlag)
+                                
+                            if(len(sellOrderList)>0):
+                                SellOrder(sellFlag,assetQuant,client,coin,c7,ws1,ws2,
+                                        flag,assetExcel1,assetExcel2,wb2,path,
+                                        sellOrderList,1,sellOrderDict,btc_price,
+                                        signalSellFlag)
+                            buyOrderList = []
+                            sellOrderList = []
+                            sellOrderDict = {}
+
+                        if (loopFlag == 1):
+                            break
+
+                        else:
+                            print("\n-------------------------------------------------")
+                            print (datetime.now(),"Данные были введенны в таблицу, никакого действия не было обнаруженно, бот продолжит работать")
+                            print("-------------------------------------------------")
+                            wbt.close()
+                            break                        
 
                 else:
-                    
                     flag = flag + 1
+                    
             time.sleep(60) 
 
         else:
@@ -1013,60 +1500,79 @@ def MainFunc(path):
             time.sleep(60) 
 
 
-
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#! Load historical data into csv file
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 def LoadTimeStamp():
     url = 'https://api.binance.com/api/v3/klines'
     print ("\nВведите валютную пару: (формат: BTCUSDT)\n")
     symbol = input()
 
-    print ("\nВведите интервал по времени: (формат: 1m,10m,15m,30m,1h,1d,1w,1m)\n")
+    print ("\nВведите интервал по времени: (формат: 1m,10m,15m,30m,1h,1d,1w)\n")
     interval = input()
 
-    print ("\nВведите год начала: ")
-    startYear = input()
-    print ("Введите месяц начала: ")
-    startMonth = input()
-    print ("Введите день начала: ")
-    startDay = input()
-    start = str(int(dt.datetime(int(startYear),int(startMonth),int(startDay)).timestamp()*1000))
+    print ("\nВведите дату начала через запятую и с двухзначными числами: (формат 2021.01.30)")
+    startDate = input()
+    startList = startDate.split(".",2)
+    start = str(int(dt.datetime(int(startList[0]),int(startList[1]),int(startList[2])).timestamp()*1000))
 
-    print ("\nВведите год финала: ")
-    endYear = input()
-    print ("Введите месяц финала: ")
-    endMonth = input()
-    print ("Введите день финала: ")
-    endDay = input()
-    end = str(int(dt.datetime(int(endYear),int(endMonth),int(endDay)).timestamp()*1000))
+    print ("\nВведите дату финала через запятую и с двухзначными числами: (формат 2022.01.30)")
+    endDate = input()
+    endList = endDate.split(".",2)
+    end = str(int(dt.datetime(int(endList[0]),int(endList[1]),int(endList[2])).timestamp()*1000))
 
-    par = {'symbol': symbol, 'interval': interval, 'startTime': start, 'endTime': end}
+    FetchHistData(symbol,interval,start,end,url,endList)
+
+
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#! Call the historical api and construct a data frame
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+def FetchHistData(symbol,interval,start,end,url,endList):
+    par = {'symbol': symbol, 'interval': interval, 'startTime': start, 'endTime': end, 'limit' : 1000}
 
     data = pd.DataFrame(json.loads(requests.get(url, params= par).text))
-
     #format columns name
-    data.columns = ['datetime', 'open', 'high', 'low', 'close', 'volume','close_time', 'qav', 'num_trades','taker_base_vol', 'taker_quote_vol', 'ignore']
+    data.columns = ['datetime', 'open', 'high', 'low', 'close',
+                    'volume','close_time', 'qav', 'num_trades',
+                    'taker_base_vol', 'taker_quote_vol', 'ignore']
     
     data.index = [dt.datetime.fromtimestamp(x/1000.0) for x in data.datetime]
-
     data=data.astype(float)
 
-    data.to_csv(symbol+'.csv', index = 1, header=True)
+    limitCheck = str(data.tail(1).index[0])[:-9].split("-",2)
+
+    data.to_csv(symbol+'.csv',mode="a", index = 1, header=True)
+    
+    if (limitCheck != endList):
+        startNewLimit = dt.datetime(int(limitCheck[0]),int(limitCheck[1]),int(limitCheck[2]),
+        int(str(data.tail(1).index[0])[+11:-6]),int(str(data.tail(1).index[0])[+14:-3])) + dt.timedelta(minutes=1)
+        
+        FetchHistData(symbol,interval,str(int(startNewLimit.timestamp()*1000)),end,url,endList)
 
 
-
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#! Connection to telegram bot for errors
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 def TelegramBot(message,path):
     try:
         teleBot = telegram.Bot("1960666049:AAFEaBBvpvNM37i2rCt70JIC1w-Rt1g_v1M")
         teleBot.send_message(-579479570,str(datetime.now())+" "+str(path)+" "+message)
+        
     except Exception as e:
         print ("\n Не удалось подключиться к телеграм боту, алго бот продолжит пытаться подключиться")
         print (e)
         time.sleep(5)
         StartBot(path)
 
+
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#! Connection to telegram bot for orders
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 def TelegramBotOrder(message,path):
     try:
         teleBot = telegram.Bot("1960666049:AAFEaBBvpvNM37i2rCt70JIC1w-Rt1g_v1M")
         teleBot.send_message(-739688904,str(datetime.now())+" "+str(path)+" "+message)
+        
     except Exception as e:
         print ("\n Не удалось подключиться к телеграм боту, алго бот продолжит пытаться подключиться")
         print (e)
@@ -1074,48 +1580,57 @@ def TelegramBotOrder(message,path):
         StartBot(path)
 
 
-
-
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#! Starter
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 def StartBot(path):
-    
     try:
-            MainFunc(path)
+        MainFunc(path)
 
     except Exception as e:
         if ("timed out" in str(e)):
             print(datetime.now(),"Произошла ошибка во время подключения программа попробует еще раз через 5 секунд")
 
-            TelegramBot("Произошла ошибка во время подключения бот будет продолжать пытаться подключиться"+ str(e),path)
+            TelegramBot("Произошла ошибка во время подключения бот будет продолжать пытаться подключиться"
+                + str(e),path)
 
             time.sleep(5) 
             StartBot(path)
             
         elif ("Timestamp for this request was" in str(e)):
-            print(datetime.now(),"Произошла ошибка: Синхронизируйте время вашей системы в настройках. Программа попробует еще раз через 5 секунд")
+            print(datetime.now(),
+                "Произошла ошибка: Синхронизируйте время вашей системы в настройках. Программа попробует еще раз через 5 секунд")
                         
-            TelegramBot("Произошла ошибка: Синхронизируйте время вашей системы в настройках бот будет продолжать пытаться подключиться"+ str(e),path)
+            TelegramBot("Произошла ошибка: Синхронизируйте время вашей системы в настройках бот будет продолжать пытаться подключиться"
+                + str(e),path)
             time.sleep(5) 
             StartBot(path)
 
         elif ("Timestamp for this request is" in str(e)):
-            print(datetime.now(),"Произошла ошибка: Синхронизируйте время вашей системы в настройках. Программа попробует еще раз через 5 секунд")
+            print(datetime.now(),
+                "Произошла ошибка: Синхронизируйте время вашей системы в настройках. Программа попробует еще раз через 5 секунд")
                         
-            TelegramBot("Произошла ошибка: Синхронизируйте время вашей системы в настройках бот будет продолжать пытаться подключиться"+ str(e),path)
+            TelegramBot("Произошла ошибка: Синхронизируйте время вашей системы в настройках бот будет продолжать пытаться подключиться"
+                + str(e),path)
             time.sleep(5) 
             StartBot(path)
 
         elif ("Max retries exceeded with url" in str(e)):
-                print(datetime.now(),"Произошла ошибка во время подключения программа попробует еще раз через 5 секунд")
+                print(datetime.now(),
+                    "Произошла ошибка во время подключения программа попробует еще раз через 5 секунд")
 
-                TelegramBot("Произошла ошибка во время подключения бот будет продолжать пытаться подключиться"+ str(e),path)
+                TelegramBot("Произошла ошибка во время подключения бот будет продолжать пытаться подключиться"
+                    + str(e),path)
 
                 time.sleep(5) 
                 StartBot(path)
 
         elif ("ConnectionResetError" in str(e)):
-            print(datetime.now(),"Произошла ошибка во время подключения программа попробует еще раз через 5 секунд")
+            print(datetime.now(),
+                "Произошла ошибка во время подключения программа попробует еще раз через 5 секунд")
 
-            TelegramBot("Произошла ошибка во время подключения бот будет продолжать пытаться подключиться"+ str(e),path)
+            TelegramBot("Произошла ошибка во время подключения бот будет продолжать пытаться подключиться"
+                + str(e),path)
 
             time.sleep(5) 
             StartBot(path)
@@ -1131,8 +1646,9 @@ def StartBot(path):
             Menu()
 
 
-
-
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#! Display menu and process choice
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 def Menu():
     print("\n\n-------------------------------------------------")
     print ("Выберите функцию:")
@@ -1144,12 +1660,11 @@ def Menu():
     print ("9 - Выйти из приложения\n")
     choice = input()
 
-    
-
     if (choice == "1"):
         try:
             ClearExcel()
             StartBot(GetPath())
+            
         except Exception as e:
             print("\n-------------------------------------------------")
             print("Произошла ошибка:")
@@ -1161,13 +1676,12 @@ def Menu():
             Menu()
 
     elif (choice == "2"):
-        
         StartBot(GetPath())
 
     elif (choice == "3"):
-
         try:
             SellFunc(GetPath())
+            
         except Exception as e:
             if ("timed out" in str(e)):
                 print(datetime.now(),"Произошла ошибка во время подключения попробуйте еще раз")
@@ -1175,7 +1689,8 @@ def Menu():
                 Menu()
                 
             elif ("Timestamp for this request was" in str(e)):
-                print(datetime.now(),"Произошла ошибка: Синхронизируйте время вашей системы в настройках. Попробуйте еще раз")
+                print(datetime.now(),
+                    "Произошла ошибка: Синхронизируйте время вашей системы в настройках. Попробуйте еще раз")
 
                 Menu()
 
@@ -1185,9 +1700,11 @@ def Menu():
                 print(e)
                 print("-------------------------------------------------")
                 Menu()
+                
     elif (choice == "4"):
         try:
             LoadTimeStamp()
+            
         except Exception as e:
             print("\n-------------------------------------------------")
             print("Произошла ошибка:")
@@ -1195,12 +1712,12 @@ def Menu():
             print(e)
             print("-------------------------------------------------")
             Menu()
+            
     elif (choice == "0"):
         CheckBalance()
         Menu()
 
     elif (choice == "9"):
-
         wb = load_workbook(GetPath())
         wb.close()
 
@@ -1212,5 +1729,9 @@ def Menu():
     else:
         print("\nВыбранный вами режим не существует попробуйте еще раз")
         Menu()
-
+        
+        
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#! Init
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 Menu()
