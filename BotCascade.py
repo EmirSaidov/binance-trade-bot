@@ -37,6 +37,28 @@ def GetClient():
 
     client = Client(api_key, api_secret)
     return client
+    
+
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#! Get Balance Futures
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+def CheckBalanceFutures(asset):
+    client = GetClient()
+    balanceFirst = client.futures_account_balance()
+    balanceFirst = next(item for item in balanceFirst if item["asset"] == asset)['balance']
+    return balanceFirst
+
+
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#! Check Precision for symbol
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+def get_quantity_precision(client,currency_symbol):    
+    info = client.futures_exchange_info() 
+    info = info['symbols']
+    for x in range(len(info)):
+        if info[x]['symbol'] == currency_symbol:
+            return info[x]['quantityPrecision']
+    return None
 
 
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -119,6 +141,37 @@ def AutoCleanCheckCascade(cascadeBuy,cascadeSold,path,cascadeLast,cascadeQuant):
 
 
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#! Futures orders check for excel refresh
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+def AutoCleanCheckFutures(path,botLinesTransfer,botLinesLimit):
+    wbt = xw.Book(path)
+    sheet = wbt.sheets[0]
+
+    buyCellFlag = botLinesLimit   
+        
+    wbtNew = xw.Book(GetPath())
+    sheetNew = wbtNew.sheets[0]
+
+    for x in range(7,8+int(botLinesTransfer)):
+        buyCellFlag -= 1
+        excelCopyCheck = sheetNew.range("A"+str(x)).value
+
+        if (excelCopyCheck == None):
+            copyList = ["A","B","C","D","E","F","G","H",
+                        "J","T","U","V","W","X","Y","Z",
+                        "AA","AB","AC","AE","AF","AG","AH",
+                        "AI","AJ","AL","AM","AN","AO","AP",
+                        "AQ","AR","AS","AT"]
+
+            for i in copyList:
+                sheetNew.range(i+str(x)).value = sheet.range(i+str(buyCellFlag)).value
+            
+    wbtNew.save()
+    wbtNew.close()
+    wbt.close()
+
+
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #! Obtain path of the excel file or save it
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 def GetPath():
@@ -163,368 +216,266 @@ def GetPathTemplate():
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #! Fire order buy FUTURE
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-# def BuyOrderFuture(btc_price,client,coin,
-#              ws2,ws1,flag,assetExcel1,assetExcel2,
-#              wb2,buyFlag,quantFlag,path,quantBuyFlag):
-#     #TODO add futures option
-#     while (buyFlag > 0):
-#         try:
-#             if (statusFlag == 0):
-#                 quant = float(allocFunds)/float(btc_price["price"])
+def BuyOrderFuture(allocFunds,btc_price,client,coin,
+             ws2,ws1,flag,assetExcel1,assetExcel2,
+             wb2,buyFlag,quantFlag,path,quantBuyFlag):
+    #TODO add futures option
+    while (buyFlag > 0):
+        try:
+            quant = float(allocFunds)/float(btc_price["price"])
+            quant = float(round(quant,get_quantity_precision(client,coin)))
 
-#                 info = client.get_symbol_info(coin)
-#                 step_size = [float(_['stepSize']) for _ in info['filters'] if _['filterType'] == 'LOT_SIZE'][0]
-#                 step_size = '%.8f' % step_size
-#                 step_size = step_size.rstrip('0')
-#                 decimals = len(step_size.split('.')[1])
-#                 final = math.floor(quant * 10.0001 ** decimals) / 10 ** decimals
-                
-#                 orderType = ws1.cell(row = 2, column = 10)
-                
-#                 if (orderType.value == "LIMIT"):
-#                     buy_order_limit = client.create_order(
-#                         symbol=coin,
-#                         side='BUY',
-#                         type='LIMIT',
-#                         timeInForce='GTC',
-#                         quantity=final,
-#                         price = int(c6))
-
-#                 elif (orderType.value == "MARKET"):
-#                     buy_order_limit = client.create_order(
-#                         symbol=coin,
-#                         side='BUY',
-#                         type='MARKET',
-#                         quantity=final)
-
-#                 print("\n\n-------------------------------------------------")
-#                 print (datetime.now(),"Ордер на покупку был выставлен:")
-#                 print("\n",buy_order_limit)
-#                 print("-------------------------------------------------")
-
-#                 buyOrderList.append(buy_order_limit["orderId"])
-
-#                 buyFlag = 10
-#                 break
-
-#             if (statusFlag == 1):
-#                 for i in buyOrderList:
-#                     order_confirm = client.get_order(
-#                         symbol = coin,
-#                         orderId = i
-#                     )
-                    
-#                     if (order_confirm["status"]== "FILLED"):
-#                         cBoughtQuant = ws2.cell(row = flag, column = quantBuyFlag)
-#                         cBoughtQuant.value = float(btc_price["price"]) * float(order_confirm["executedQty"])
-
-#                         cBoughtPrice = ws2.cell(row = flag, column = 10)
-#                         cBoughtPrice.value = float(btc_price["price"])
-
-#                         balanceFirst = client.get_asset_balance(asset=assetExcel1)
-#                         сFirstAssetBalance = ws1.cell(row = 2, column = 8)
-#                         сFirstAssetBalance.value = balanceFirst["free"]
-
-#                         balanceSecond = client.get_asset_balance(asset=assetExcel2)
-#                         cSecondAssetBalance = ws1.cell(row = 2, column = 9)
-#                         cSecondAssetBalance.value = balanceSecond["free"]
-
-#                         cBoughtLastQuant = ws2.cell(row = 1, column = quantFlag)
-#                         cBoughtLastQuant.value = order_confirm["executedQty"]
-
-#                         wb2.save(path)
-                        
-#                         print("\n\n-------------------------------------------------")
-#                         print(datetime.now(),"покупка прошла успешно, данные о покупке:")
-#                         print(order_confirm)
-
-#                         buyFlag = 10
-#                         time.sleep(15) 
-                        
-#                         cascade = 0
-
-#                         if (quantBuyFlag== 17):
-#                             cascade = 1
-#                         elif(quantBuyFlag==34): 
-#                             cascade = 2
-#                         elif(quantBuyFlag==51): 
-#                             cascade = 3  
-#                         elif(quantBuyFlag==68): 
-#                             cascade = 4
-#                         elif(quantBuyFlag==85): 
-#                             cascade = 5
-                            
-#                         TelegramBotOrder("Произошла покупка, Каскад: "
-#                                          +str(cascade)+" Кол-во: "
-#                                          +str(cBoughtQuant.value)+"; Цена: "
-#                                          +str(cBoughtPrice.value)+"; Баланс "
-#                                          +str(assetExcel1)+": "
-#                                          +str(сFirstAssetBalance.value)+"; Баланс "
-#                                          +str(assetExcel2)+": "
-#                                          +str(cSecondAssetBalance.value),path)
-                        
-#                     else:
-#                         client.cancel_order(symbol=coin, orderId=i)
-
-#                         print("Ордер не был заполнен, ордер был отменен, данные были удаленны")
-
-#                         c1 = ws2.cell(row = flag, column = 9)
-#                         c1.value = None
-
-#                         c2 = ws2.cell(row = flag, column = 10)
-#                         c2.value = None
-
-#                         c3 = ws2.cell(row = flag, column = 18)
-#                         c3.value = None
-
-#                         c4 = ws2.cell(row = flag, column = 35)
-#                         c4.value = None
-
-#                         c5 = ws2.cell(row = flag, column = 52)
-#                         c5.value = None
-                        
-#                         c6 = ws2.cell(row = flag, column = 69)
-#                         c6.value = None
-
-#                         c7 = ws2.cell(row = flag, column = 86)
-#                         c7.value = None
-
-#                         wb2.save(path)
-                        
-#                 break
+            orderType = ws1.cell(row = 2, column = 10)
             
-#         except BinanceAPIException as e:      
-#             print(e)
-#             print(datetime.now(),
-#                   "Произошла ошибка во время подключения, количество оставшихся попыток: "
-#                   + str(buyFlag))
+            # if (orderType.value == "LIMIT"):
+            #     buy_order_limit = client.futures_create_order(
+            #         symbol=coin,
+            #         side='BUY',
+            #         type='LIMIT',
+            #         timeInForce='GTC',
+            #         quantity=final,
+            #         price = int(c6))
 
-#             TelegramBot("Произошла ошибка во время подключения с бинансом количество оставшихся попыток:"
-#                         + str(buyFlag)+ str(e),path)
+            if (orderType.value == "MARKET"):
+                buy_order_limit = client.futures_create_order(
+                    symbol=coin,
+                    side='BUY',
+                    positionSide = botHedgeType,
+                    type='MARKET',
+                    quantity=quant)
 
-#             if (buyFlag > 0):
-#                 print ("Операция повторится через 5 секунд")
-#                 time.sleep(5) 
+            print("\n\n-------------------------------------------------")
+            print (datetime.now(),"Ордер на покупку был выставлен:")
+            print("\n",buy_order_limit)
+            print("-------------------------------------------------")
 
-#                 if (buyFlag == 1):
-#                     print ("Бот не смог подключиться данные о покупке были удаленны")
-
-#                     c1 = ws2.cell(row = flag, column = 9)
-#                     c1.value = None
-
-#                     c2 = ws2.cell(row = flag, column = 10)
-#                     c2.value = None
-
-#                     c3 = ws2.cell(row = flag, column = 18)
-#                     c3.value = None
-
-#                     c4 = ws2.cell(row = flag, column = 35)
-#                     c4.value = None
-
-#                     c5 = ws2.cell(row = flag, column = 52)
-#                     c5.value = None
-                    
-#                     c6 = ws2.cell(row = flag, column = 69)
-#                     c6.value = None
-
-#                     c7 = ws2.cell(row = flag, column = 86)
-#                     c7.value = None
-
-#                     wb2.save(path)
-
-#                     StartBot(path)
-
-#                 buyFlag = buyFlag - 1
-
-#             else:
-#                 StartBot(path)
-                
-#         except BinanceOrderException as e:
-#             # error handling goes here
-#             print(datetime.now(),
-#                   "Произошла ошибка во время проведения операции с бинансом сохраните этот код ошибки:")
-
-#             TelegramBot("Произошла ошибка во время проведения операции с бинансом бот был остановлен. Код ошибки:"
-#                         + str(e),path)
-
-#             print(e)
-#             Menu()
+            time.sleep(5)
+            order_confirm = client.futures_get_order(
+                        symbol = coin,
+                        orderId = buy_order_limit["orderId"]
+                    )
             
-#         except Exception as e:
-#             print(datetime.now(),"Нету связи с интернетом бот попробует записать данные еще раз через 1 минуту "
-#                   + str(e))
-#             time.sleep(60) 
+            if (order_confirm["status"]== "FILLED"): 
+                cBoughtQuant = ws2.cell(row = flag, column = quantBuyFlag)
+                cBoughtQuant.value = float(btc_price["price"]) * float(order_confirm["executedQty"])
 
+                # cBoughtPrice = ws2.cell(row = flag, column = 10)
+                # cBoughtPrice.value = float(btc_price["price"])
 
-# #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-# #! Fire sell order FUTURE
-# #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-# def SellOrderFuture(sellFlag,client,coin,ws1,ws2,
-#               flag,assetExcel1,assetExcel2,wb2,path,
-#               btc_price):
-#     #TODO Add futures option
-#     while (sellFlag > 0):            
-                            
-#         try:
-#             if (statusFlag == 0):
-#                 info = client.get_symbol_info(coin)
-#                 step_size = [float(_['stepSize']) 
-#                              for _ in info['filters'] 
-#                              if _['filterType'] == 'LOT_SIZE'][0]
-#                 step_size = '%.8f' % step_size
-#                 step_size = step_size.rstrip('0')
-#                 decimals = len(step_size.split('.')[1])
-#                 final = math.floor(assetQuant * 10.0001 ** decimals) / 10 ** decimals
+                сFirstAssetBalance = ws1.cell(row = 2, column = 8)
+                сFirstAssetBalance.value = CheckBalanceFutures(assetExcel1)
 
-#                 orderType = ws1.cell(row = 2, column = 10)
+                cSecondAssetBalance = ws1.cell(row = 2, column = 9)
+                cSecondAssetBalance.value = CheckBalanceFutures(assetExcel2)
 
-#                 if (orderType.value == "LIMIT"):
-#                     sell_order_limit = client.create_order(
-#                         symbol=coin,
-#                         side='SELL',
-#                         type='LIMIT',
-#                         timeInForce='GTC',
-#                         quantity=final,
-#                         price = int(c7))
+                # cBoughtLastQuant = ws2.cell(row = 1, column = quantFlag)
+                # cBoughtLastQuant.value = buy_order_limit["executedQty"]
+
+                wb2.save(path)
                 
-#                 elif (orderType.value == "MARKET"):
-#                     sell_order_limit = client.create_order(
-#                         symbol=coin,
-#                         side='SELL',
-#                         type='MARKET',
-#                         quantity=final)
+                print("\n\n-------------------------------------------------")
+                print(datetime.now(),"покупка прошла успешно, данные о покупке:")
+                print(order_confirm)
 
-#                 print("\n\n-------------------------------------------------")
-#                 print (datetime.now(),"Ордер на продажу был выставлен:")
-#                 print("\n",sell_order_limit)
-#                 print("-------------------------------------------------")
-
-#                 sellOrderList.append(sell_order_limit["orderId"])
-#                 sellFlag = 10
-
-#                 break
-
-#             elif (statusFlag == 1):
-#                 dict_pairs = sellOrderDict.items()
-#                 pairs_iterator = iter(dict_pairs)
-                
-#                 for i in sellOrderList:
-#                     order_confirm = client.get_order(
-#                         symbol = coin,
-#                         orderId = i
-#                     )
-
-#                     if (order_confirm["status"]== "FILLED"):
-#                         SellPair = next(pairs_iterator)
-
-#                         cBoughtQuant = ws2.cell(row = flag, column = SellPair[0])
-#                         cBoughtQuant.value = float(btc_price["price"]) * float(order_confirm["executedQty"])
-
-#                         cBoughtPrice = ws2.cell(row = flag, column = 10)
-#                         cBoughtPrice.value = float(btc_price["price"])
-
-#                         balanceFirst = client.get_asset_balance(asset=assetExcel1)
-#                         сFirstAssetBalance = ws1.cell(row = 2, column = 8)
-#                         сFirstAssetBalance.value = balanceFirst["free"]
-
-#                         balanceSecond = client.get_asset_balance(asset=assetExcel2)
-#                         cSecondAssetBalance = ws1.cell(row = 2, column = 9)
-#                         cSecondAssetBalance.value = balanceSecond["free"]
-
-#                         wb2.save(path)
-
-#                         print("\n\n-------------------------------------------------")
-#                         print(datetime.now(),"продажа прошла успешно, данные о продаже:")
-#                         print(order_confirm)
-                        
-#                         cascade = 0
-
-#                         if (SellPair[0]== 20):
-#                             cascade = 1
-#                         elif(SellPair[0]==37): 
-#                             cascade = 2
-#                         elif(SellPair[0]==54): 
-#                             cascade = 3  
-#                         elif(SellPair[0]==71): 
-#                             cascade = 4
-#                         elif(SellPair[0]==88): 
-#                             cascade = 5
-
-#                         TelegramBotOrder("Произошла продажа, Каскад: "
-#                                          +str(cascade)+" Кол-во: "
-#                                          +str(cBoughtQuant.value)+"; Цена: "
-#                                          +str(cBoughtPrice.value)+"; Баланс "
-#                                          +str(assetExcel1)+": "
-#                                          +str(сFirstAssetBalance.value)+"; Баланс "
-#                                          +str(assetExcel2)+": "
-#                                          +str(cSecondAssetBalance.value),path)
-                        
-#                         sellFlag = 10
-#                         time.sleep(15) 
-                        
-#                     else:
-#                         SellPair = next(pairs_iterator)
-
-#                         client.cancel_order(symbol=coin, orderId=i)
-
-#                         print("Ордер не был заполнен, ордер был отменен, данные были удаленны")
-
-#                         c1 = ws2.cell(row = flag, column = 9)
-#                         c1.value = None
-
-#                         c2 = ws2.cell(row = flag, column = 10)
-#                         c2.value = None
-
-#                         c3 = ws2.cell(row = flag, column = SellPair[1])
-#                         c3.value = None
+                buyFlag = 10
+                time.sleep(5) 
                     
-#                         wb2.save(path)
+                TelegramBotOrder("Произошла покупка фьючерса, Кол-во: "
+                                    +str(cBoughtQuant.value)+"; Цена: "
+                                    +str(btc_price["price"])+"; Баланс "
+                                    +str(assetExcel1)+": "
+                                    +str(сFirstAssetBalance.value)+"; Баланс "
+                                    +str(assetExcel2)+": "
+                                    +str(cSecondAssetBalance.value),path)
+                
+            else:
+                client.futures_cancel_order(symbol=coin, orderId=buy_order_limit["orderId"])
 
-#                 break
+                print("Ордер не был заполнен, ордер был отменен, данные были удаленны")
+
+                c1 = ws2.cell(row = flag, column = 28)
+                c1.value = None
+
+                wb2.save(path)
+                
+            break
+            
+        except BinanceAPIException as e:      
+            print(e)
+            print(datetime.now(),
+                  "Произошла ошибка во время подключения, количество оставшихся попыток: "
+                  + str(buyFlag))
+
+            TelegramBot("Произошла ошибка во время подключения с бинансом количество оставшихся попыток:"
+                        + str(buyFlag)+ str(e),path)
+
+            if (buyFlag > 0):
+                print ("Операция повторится через 5 секунд")
+                time.sleep(5) 
+
+                if (buyFlag == 1):
+                    print ("Бот не смог подключиться данные о покупке были удаленны")
+
+                    c1 = ws2.cell(row = flag, column = 28)
+                    c1.value = None
+
+                    wb2.save(path)
+
+                    StartBot(path)
+
+                buyFlag = buyFlag - 1
+
+            else:
+                StartBot(path)
+                
+        except BinanceOrderException as e:
+            # error handling goes here
+            print(datetime.now(),
+                  "Произошла ошибка во время проведения операции с бинансом сохраните этот код ошибки:")
+
+            TelegramBot("Произошла ошибка во время проведения операции с бинансом бот был остановлен. Код ошибки:"
+                        + str(e),path)
+
+            print(e)
+            Menu()
+            
+        except Exception as e:
+            print(datetime.now(),"Нету связи с интернетом бот попробует записать данные еще раз через 1 минуту "
+                  + str(e))
+            time.sleep(60) 
+
+
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#! Fire sell order FUTURE
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+def SellOrderFuture(assetQuant,sellFlag,client,coin,ws1,ws2,
+              flag,assetExcel1,assetExcel2,wb2,path,
+              btc_price,quantSellFlag):
+    #TODO Add futures option
+    while (sellFlag > 0):                       
+        try:
+            quant = float(assetQuant)/float(btc_price["price"])
+            quant = float(round(quant,get_quantity_precision(client,coin)))
+
+            orderType = ws1.cell(row = 2, column = 10)
+
+            # if (orderType.value == "LIMIT"):
+            #     sell_order_limit = client.create_order(
+            #         symbol=coin,
+            #         side='SELL',
+            #         type='LIMIT',
+            #         timeInForce='GTC',
+            #         quantity=final,
+            #         price = int(c7))
+            
+            if (orderType.value == "MARKET"):
+                sell_order_limit = client.futures_create_order(
+                    symbol=coin,
+                    side='SELL',
+                    positionSide = botHedgeType,
+                    type='MARKET',
+                    quantity=quant)
+
+            print("\n\n-------------------------------------------------")
+            print (datetime.now(),"Ордер на продажу был выставлен:")
+            print("\n",sell_order_limit)
+            print("-------------------------------------------------")
+
+            time.sleep(5)
+            
+            order_confirm = client.futures_get_order(
+                        symbol = coin,
+                        orderId = sell_order_limit["orderId"]
+                    )
+            
+            if (order_confirm["status"]== "FILLED"): 
+
+                cBoughtQuant = ws2.cell(row = flag, column = quantSellFlag)
+                cBoughtQuant.value = float(btc_price["price"]) * float(order_confirm["executedQty"])
+
+                # cBoughtPrice = ws2.cell(row = flag, column = 10)
+                # cBoughtPrice.value = float(btc_price["price"])
+
+                сFirstAssetBalance = ws1.cell(row = 2, column = 8)
+                сFirstAssetBalance.value = CheckBalanceFutures(assetExcel1)
+
+                cSecondAssetBalance = ws1.cell(row = 2, column = 9)
+                cSecondAssetBalance.value = CheckBalanceFutures(assetExcel2)
+
+                wb2.save(path)
+
+                print("\n\n-------------------------------------------------")
+                print(datetime.now(),"продажа прошла успешно, данные о продаже:")
+                print(order_confirm)
+                
+                sellFlag = 10
+                time.sleep(5)
+                
+                TelegramBotOrder("Произошла продажа, Кол-во: "
+                                    +str(cBoughtQuant.value)+"; Цена: "
+                                    +str(btc_price["price"])+"; Баланс "
+                                    +str(assetExcel1)+": "
+                                    +str(сFirstAssetBalance.value)+"; Баланс "
+                                    +str(assetExcel2)+": "
+                                    +str(cSecondAssetBalance.value),path)
+                
+                 
+                
+            else:
+                client.futures_cancel_order(symbol=coin, orderId=sell_order_limit["orderId"])
+
+                print("Ордер не был заполнен, ордер был отменен, данные были удаленны")
+
+                c1 = ws2.cell(row = flag, column = 25)
+                c1.value = None
+                
+                wb2.save(path)
+
+            break
         
-#         except BinanceAPIException as e:
-#             # error handling goes here
-#             print(datetime.now(),"Произошла ошибка во время подключения, количество оставшихся попыток: "
-#                 + str(sellFlag))
+        except BinanceAPIException as e:
+            # error handling goes here
+            print(datetime.now(),"Произошла ошибка во время подключения, количество оставшихся попыток: "
+                + str(sellFlag))
 
-#             TelegramBot("Произошла ошибка во время подключения с бинансом количество оставшихся попыток:" 
-#                 + str(sellFlag)+ str(e),path)
+            TelegramBot("Произошла ошибка во время подключения с бинансом количество оставшихся попыток:" 
+                + str(sellFlag)+ str(e),path)
 
-#             print(e)
+            print(e)
             
-#             if (sellFlag > 0):
-#                 print ("Операция повторится через 5 секунд")
-#                 time.sleep(5) 
+            if (sellFlag > 0):
+                print ("Операция повторится через 5 секунд")
+                time.sleep(5) 
                 
-#                 if (sellFlag == 1):
-#                     print ("Бот не смог подключиться данные о продаже были удаленны")
+                if (sellFlag == 1):
+                    print ("Бот не смог подключиться данные о продаже были удаленны")
 
-#                     c1 = ws2.cell(row = flag, column = signalSellFlag)
-#                     c1.value = None
+                    c1 = ws2.cell(row = flag, column = 25)
+                    c1.value = None
 
-#                     wb2.save(path)
-#                     StartBot(path)
+                    wb2.save(path)
+                    StartBot(path)
 
-#                 sellFlag = sellFlag - 1
+                sellFlag = sellFlag - 1
 
-#             else:
-#                 StartBot(path)
+            else:
+                StartBot(path)
                 
-#         except BinanceOrderException as e:
-#             # error handling goes here
-#             print(datetime.now(),
-#                 "Произошла ошибка во время проведения операции с бинансом сохраните этот код ошибки:")
+        except BinanceOrderException as e:
+            # error handling goes here
+            print(datetime.now(),
+                "Произошла ошибка во время проведения операции с бинансом сохраните этот код ошибки:")
 
-#             TelegramBot("Произошла ошибка во время проведения операции с бинансом бот был остановлен. Код ошибки:"
-#                 + str(e),path)
+            TelegramBot("Произошла ошибка во время проведения операции с бинансом бот был остановлен. Код ошибки:"
+                + str(e),path)
 
-#             print(e)
-#             Menu()
+            print(e)
+            Menu()
             
-#         except Exception as e:
-#             print(datetime.now(),"Нету связи с интернетом бот попробует записать данные еще раз через 1 минуту "
-#                 + str(e))
-#             time.sleep(60) 
+        except Exception as e:
+            print(datetime.now(),"Нету связи с интернетом бот попробует записать данные еще раз через 1 минуту "
+                + str(e))
+            time.sleep(60) 
 
 
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1022,6 +973,7 @@ def ClearExcel():
         wb2 = load_workbook(newPath)
         newPath = str(datetime.now().strftime("%Y-%m-%d"))+newPath
         wb2.save(newPath)
+        wb2.close()
         print ("Файл готов торговля начинается\n")
 
         f = open("excelName.txt","w+")
@@ -1068,11 +1020,11 @@ def MainFunc(path):
 
     client = GetClient()
 
-    time_cell = ws2.cell(row = 2, column = 3)
+    time_cell = ws2.cell(row = 2, column = 4)
     orderTime = time_cell.value
     timesList = []
 
-    funds_cell = ws2.cell(row = 2, column = 4)
+    funds_cell = ws2.cell(row = 2, column = 3)
 
     coin_cell = ws2.cell(row = 2, column = 5)
     coin = coin_cell.value
@@ -1085,12 +1037,37 @@ def MainFunc(path):
     
     global botType 
     botType = ws2.cell(row = 2, column = 11).value
+        
+    global botHedgeType 
+    botHedgeType = ws2.cell(row = 2, column = 19).value
+    
+    botLineLimit = ws2.cell(row = 2, column = 17).value
+    botLinesTransfer = ws2.cell(row = 2, column = 18).value
+
+    if (botType == "Future"):
+        botLeverage = ws2.cell(row = 2, column = 13).value
+        client.futures_change_leverage(symbol=coin, leverage=int(botLeverage))
+        
+        botPositionMode = ws2.cell(row = 2, column = 15).value
+        if (botPositionMode == "HEDGE" and client.futures_get_position_mode()["dualSidePosition"] != True):            
+            client.futures_change_position_mode(dualSidePosition="true")
+        elif (botPositionMode == "ONEWAY" and client.futures_get_position_mode()["dualSidePosition"] != False):
+            client.futures_change_position_mode(dualSidePosition="false")
+            
+        botAssetMode = ws2.cell(row = 2, column = 16).value
+        if (botAssetMode == "MULTI" and client.futures_get_multi_assets_mode()["multiAssetsMargin"] != True):
+            client.futures_change_multi_assets_mode(multiAssetsMargin="true")
+        elif (botAssetMode == "SINGLE" and client.futures_get_multi_assets_mode()["multiAssetsMargin"] != False):
+            client.futures_change_multi_assets_mode(multiAssetsMargin="false")
 
     asset_test1 = client.get_asset_balance(asset=assetExcel1)
 
     asset_test2 = client.get_asset_balance(asset=assetExcel2)
 
     coin_test = client.get_symbol_ticker(symbol=coin)
+
+    global symbolPrecision
+    symbolPrecision = get_quantity_precision(client,coin)
 
     try:
         allocFunds = int(funds_cell.value)
@@ -1130,24 +1107,30 @@ def MainFunc(path):
         print ("\nВремя указанное в экселе не соблюдает формату проверьте свой файл")
         Menu()
 
-    flag = 6
+    flag = 7
     buyFlag = 10
     sellFlag = 10
     
-    balanceFirst = client.get_asset_balance(asset=assetExcel1)
-    сFirstAssetBalance = ws2.cell(row = 2, column = 8)
-    сFirstAssetBalance.value = balanceFirst["free"]
+    if (botType == "Future"):
+        сFirstAssetBalance = ws2.cell(row = 2, column = 8)
+        сFirstAssetBalance.value = CheckBalanceFutures(assetExcel1)
 
-    balanceSecond = client.get_asset_balance(asset=assetExcel2)
-    cSecondAssetBalance = ws2.cell(row = 2, column = 9)
-    cSecondAssetBalance.value = balanceSecond["free"]
-
-    wb2.save(path)
-
-    while True:
+        cSecondAssetBalance = ws2.cell(row = 2, column = 9)
+        cSecondAssetBalance.value = CheckBalanceFutures(assetExcel2)
         
-        client = GetClient()
+    elif (botType == "Spot"):
+        balanceFirst = client.get_asset_balance(asset=assetExcel1)
+        сFirstAssetBalance = ws2.cell(row = 2, column = 8)
+        сFirstAssetBalance.value = balanceFirst["free"]
 
+        balanceSecond = client.get_asset_balance(asset=assetExcel2)
+        cSecondAssetBalance = ws2.cell(row = 2, column = 9)
+        cSecondAssetBalance.value = balanceSecond["free"]
+    
+    wb2.save(path)
+    wb2.close()
+    while True:
+        client = GetClient()
         wb2 = load_workbook(path)
         ws2 = wb2.worksheets[0]
         ws1 = wb2.worksheets[1]
@@ -1158,24 +1141,30 @@ def MainFunc(path):
         if (currentTime in timesList):
             while (flag < 1048575):
                 c1 = ws2.cell(row = flag, column = 1)
-
-                if (flag == 1000):
+                if (flag >= int(botLineLimit)):
                     #TODO add futures bot
                     oldPath = GetPath()
 
                     ClearExcel()
-
-                    AutoCleanCheckCascade("R","U",oldPath,"N","Q")
-                    AutoCleanCheckCascade("AI","AL",oldPath,"AE","AH")
-                    AutoCleanCheckCascade("AZ","BC",oldPath,"AV","AY")
-                    AutoCleanCheckCascade("BQ","BT",oldPath,"BM","BP")
-                    AutoCleanCheckCascade("CH","CK",oldPath,"CD","CG")
+                    
+                    if(botType == "Future"):
+                        AutoCleanCheckFutures(oldPath,botLinesTransfer,botLineLimit)
+                    else:
+                        AutoCleanCheckCascade("R","U",oldPath,"N","Q")
+                        AutoCleanCheckCascade("AI","AL",oldPath,"AE","AH")
+                        AutoCleanCheckCascade("AZ","BC",oldPath,"AV","AY")
+                        AutoCleanCheckCascade("BQ","BT",oldPath,"BM","BP")
+                        AutoCleanCheckCascade("CH","CK",oldPath,"CD","CG")
 
                     StartBot(GetPath())
 
                 if (c1.value == None):
-                    btc_price = client.get_symbol_ticker(symbol=coin)
-
+                    if (botType == "Future"):
+                        btc_price = client.futures_symbol_ticker(symbol=coin)
+                        
+                    elif (botType == "Spot"):
+                        btc_price = client.get_symbol_ticker(symbol=coin)
+                        
                     now = datetime.now()
                     currentTime = now.strftime("%H:%M")
                     
@@ -1190,44 +1179,47 @@ def MainFunc(path):
                     c3.value = float(btc_price["price"])
                     c3.number_format
                     wb2.save(path)
-
+                    
                     wbt = xw.Book(path)
                     sheet = wbt.sheets[0]
                     flagstr = str(flag)
                     
                     #TODO add futures bot
                     if (botType == "Future"):
-                        buySignalFuture = sheet.range('R'+flagstr).value
-                        sellSignalFuture = sheet.range('U'+flagstr).value
+                        buySignalFuture = sheet.range('AL'+flagstr).value
+                        sellSignalFuture = sheet.range('AF'+flagstr).value
                         
-                        if (buySignalFuture == 1):
-                            wbt = xw.Book(path)
-                            sheet = wbt.sheets[0]
-                            quantToBuy = sheet.range('AJ'+flagstr).value
+                        if(buySignalFuture == 1 or sellSignalFuture == 1):
+                            if (buySignalFuture == 1):
+                                wbt = xw.Book(path)
+                                sheet = wbt.sheets[0]
+                                quantToBuy = sheet.range('AJ'+flagstr).value
 
-                            print(float(btc_price["price"]))
-                            wbt.close()
+                                print(float(btc_price["price"]))
+                                wbt.close()
 
-                            quantBuyFlag = 37
-                            quantFlag = 37
+                                quantBuyFlag = 37
+                                quantFlag = 37
 
-                            # BuyOrderFuture(allocFunds,btc_price,client,coin,c6,ws2,
-                            #         ws1,flag,assetExcel1,assetExcel2,wb2,
-                            #         buyFlag,quantFlag,path,buyOrderList,
-                            #         outerStatusFlag,quantBuyFlag)
-                            
-                        if (sellSignalFuture == 1):
-                            wbt = xw.Book(path)
-                            sheet = wbt.sheets[0]
-                            quantToSell = sheet.range('AI'+flagstr).value
+                                BuyOrderFuture(quantToBuy,btc_price,client,coin,ws2,
+                                        ws1,flag,assetExcel1,assetExcel2,wb2,
+                                        buyFlag,quantFlag,path,
+                                        quantBuyFlag)
+                                
+                            if (sellSignalFuture == 1):
+                                wbt = xw.Book(path)
+                                sheet = wbt.sheets[0]
+                                quantToSell = sheet.range('AI'+flagstr).value
 
-                            print(float(btc_price["price"]))
-                            wbt.close()
-                            
-                            # SellOrderFuture(sellFlag,assetQuant,client,coin,c7,ws1,ws2,
-                                    # flag,assetExcel1,assetExcel2,wb2,path,
-                                    # sellOrderList,outerStatusFlag,
-                                    # sellOrderDict,btc_price,signalSellFlag)
+                                print(float(btc_price["price"]))
+                                wbt.close()
+                                
+                                quantSellFlag = 30
+
+                                SellOrderFuture(quantToSell,sellFlag,client,coin,ws1,ws2,
+                                        flag,assetExcel1,assetExcel2,wb2,path
+                                        ,btc_price,quantSellFlag)
+                            break
                             
                         else:
                             print("\n-------------------------------------------------")
@@ -1584,66 +1576,69 @@ def TelegramBotOrder(message,path):
 #! Starter
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 def StartBot(path):
-    try:
-        MainFunc(path)
-
-    except Exception as e:
-        if ("timed out" in str(e)):
-            print(datetime.now(),"Произошла ошибка во время подключения программа попробует еще раз через 5 секунд")
-
-            TelegramBot("Произошла ошибка во время подключения бот будет продолжать пытаться подключиться"
-                + str(e),path)
-
-            time.sleep(5) 
-            StartBot(path)
             
-        elif ("Timestamp for this request was" in str(e)):
-            print(datetime.now(),
-                "Произошла ошибка: Синхронизируйте время вашей системы в настройках. Программа попробует еще раз через 5 секунд")
+    MainFunc(path)
+
+    # try:
+    #     MainFunc(path)
+
+    # except Exception as e:
+    #     if ("timed out" in str(e)):
+    #         print(datetime.now(),"Произошла ошибка во время подключения программа попробует еще раз через 5 секунд")
+
+    #         TelegramBot("Произошла ошибка во время подключения бот будет продолжать пытаться подключиться"
+    #             + str(e),path)
+
+    #         time.sleep(5) 
+    #         StartBot(path)
+            
+    #     elif ("Timestamp for this request was" in str(e)):
+    #         print(datetime.now(),
+    #             "Произошла ошибка: Синхронизируйте время вашей системы в настройках. Программа попробует еще раз через 5 секунд")
                         
-            TelegramBot("Произошла ошибка: Синхронизируйте время вашей системы в настройках бот будет продолжать пытаться подключиться"
-                + str(e),path)
-            time.sleep(5) 
-            StartBot(path)
+    #         TelegramBot("Произошла ошибка: Синхронизируйте время вашей системы в настройках бот будет продолжать пытаться подключиться"
+    #             + str(e),path)
+    #         time.sleep(5) 
+    #         StartBot(path)
 
-        elif ("Timestamp for this request is" in str(e)):
-            print(datetime.now(),
-                "Произошла ошибка: Синхронизируйте время вашей системы в настройках. Программа попробует еще раз через 5 секунд")
+    #     elif ("Timestamp for this request is" in str(e)):
+    #         print(datetime.now(),
+    #             "Произошла ошибка: Синхронизируйте время вашей системы в настройках. Программа попробует еще раз через 5 секунд")
                         
-            TelegramBot("Произошла ошибка: Синхронизируйте время вашей системы в настройках бот будет продолжать пытаться подключиться"
-                + str(e),path)
-            time.sleep(5) 
-            StartBot(path)
+    #         TelegramBot("Произошла ошибка: Синхронизируйте время вашей системы в настройках бот будет продолжать пытаться подключиться"
+    #             + str(e),path)
+    #         time.sleep(5) 
+    #         StartBot(path)
 
-        elif ("Max retries exceeded with url" in str(e)):
-                print(datetime.now(),
-                    "Произошла ошибка во время подключения программа попробует еще раз через 5 секунд")
+    #     elif ("Max retries exceeded with url" in str(e)):
+    #             print(datetime.now(),
+    #                 "Произошла ошибка во время подключения программа попробует еще раз через 5 секунд")
 
-                TelegramBot("Произошла ошибка во время подключения бот будет продолжать пытаться подключиться"
-                    + str(e),path)
+    #             TelegramBot("Произошла ошибка во время подключения бот будет продолжать пытаться подключиться"
+    #                 + str(e),path)
 
-                time.sleep(5) 
-                StartBot(path)
+    #             time.sleep(5) 
+    #             StartBot(path)
 
-        elif ("ConnectionResetError" in str(e)):
-            print(datetime.now(),
-                "Произошла ошибка во время подключения программа попробует еще раз через 5 секунд")
+    #     elif ("ConnectionResetError" in str(e)):
+    #         print(datetime.now(),
+    #             "Произошла ошибка во время подключения программа попробует еще раз через 5 секунд")
 
-            TelegramBot("Произошла ошибка во время подключения бот будет продолжать пытаться подключиться"
-                + str(e),path)
+    #         TelegramBot("Произошла ошибка во время подключения бот будет продолжать пытаться подключиться"
+    #             + str(e),path)
 
-            time.sleep(5) 
-            StartBot(path)
+    #         time.sleep(5) 
+    #         StartBot(path)
 
-        else:
-            print("\n-------------------------------------------------")
-            print("Произошла ошибка:")
+        # else:
+        #     print("\n-------------------------------------------------")
+        #     print("Произошла ошибка:")
                         
-            TelegramBot("Произошла ошибка бот был остановлен. Код ошибки:" + str(e),path)
+        #     TelegramBot("Произошла ошибка бот был остановлен. Код ошибки:" + str(e),path)
 
-            print(e)
-            print("-------------------------------------------------")
-            Menu()
+        #     print(e)
+        #     print("-------------------------------------------------")
+        #     Menu()
 
 
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
