@@ -1577,8 +1577,6 @@ def TelegramBotOrder(message,path):
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 def StartBot(path):
             
-    MainFunc(path)
-
     try:
         MainFunc(path)
 
