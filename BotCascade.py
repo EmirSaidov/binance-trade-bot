@@ -2,6 +2,7 @@ import sys
 import time
 import math
 import json
+import psutil
 import requests
 import telegram
 import pandas as pd
@@ -14,6 +15,7 @@ from datetime import datetime
 from binance.client import Client
 from importlib import find_loader
 from openpyxl import load_workbook
+from win32com.client import DispatchEx
 from requests.models import ChunkedEncodingError
 from binance.exceptions import BinanceAPIException, BinanceOrderException
 
@@ -1728,24 +1730,26 @@ def Menu():
 
     elif (choice == "9"):
         wb = load_workbook(GetPath())
-        wb.close()
-
-        wb = load_workbook("dontTouch.xlsx")
+        wb.save(GetPath())
         wb.close()
 
         wbx = xw.Book((GetPath()))
+        wbx.save(GetPath())
         wbx.close()
 
-        wbx = xw.Book(("dontTouch.xlsx"))
-        wbx.close()
-        
+        for proc in psutil.process_iter():
+            if proc.name() == "EXCEL.EXE":
+                proc.kill()
+            if proc.name() == "excel.exe":
+                proc.kill()     
+                   
         sys.exit()
 
     else:
         print("\nВыбранный вами режим не существует попробуйте еще раз")
         Menu()
         
-        
+
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #! Init
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
