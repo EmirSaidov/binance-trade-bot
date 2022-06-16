@@ -37,10 +37,10 @@ def GetClient():
 
     client = Client(api_key, api_secret)
     return client
-    
+
 
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#! Get Balance Futures
+#! Get Balance Futures For Trading
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 def CheckBalanceFutures(asset):
     client = GetClient()
@@ -76,15 +76,31 @@ def CheckBalance():
     asset_cell2 = ws2.cell(row = 2, column = 7)
     assetExcel2 = asset_cell2.value
 
-    balanceFirst = client.get_asset_balance(asset=assetExcel1)
+    botType = ws2.cell(row = 2, column = 11).value
     
-    print ("\n")
-    print(assetExcel1,": ", balanceFirst["free"])
+    if(botType == "Future"):
+        balance = client.futures_account_balance()
 
-    balanceSecond = client.get_asset_balance(asset=assetExcel2)
-    print(assetExcel2,": ", balanceSecond["free"])
+        balanceFirst = next(item for item in balance if item["asset"] == assetExcel1)['balance']
+        balanceSecond = next(item for item in balance if item["asset"] == assetExcel2)['balance']
+        
+        print ("\n")
+        print(assetExcel1,": ", balanceFirst)
+        print(assetExcel2,": ", balanceSecond)
 
-    wb2.close()
+        wb2.close()
+
+    elif(botType == "Spot"):
+        balanceFirst = client.get_asset_balance(asset=assetExcel1)
+    
+        print ("\n")
+        print(assetExcel1,": ", balanceFirst["free"])
+
+        balanceSecond = client.get_asset_balance(asset=assetExcel2)
+        print(assetExcel2,": ", balanceSecond["free"])
+
+        wb2.close()
+   
 
 
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1714,9 +1730,15 @@ def Menu():
         wb = load_workbook(GetPath())
         wb.close()
 
+        wb = load_workbook("dontTouch.xlsx")
+        wb.close()
+
         wbx = xw.Book((GetPath()))
         wbx.close()
 
+        wbx = xw.Book(("dontTouch.xlsx"))
+        wbx.close()
+        
         sys.exit()
 
     else:
