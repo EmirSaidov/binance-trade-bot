@@ -1160,7 +1160,7 @@ def MainFunc(path):
             while (flag < 1048575):
                 c1 = ws2.cell(row = flag, column = 1)
                 if (flag >= int(botLineLimit)):
-                    #TODO add futures bot
+
                     oldPath = GetPath()
 
                     ClearExcel()
@@ -1179,10 +1179,18 @@ def MainFunc(path):
                 if (c1.value == None):
                     if (botType == "Future"):
                         btc_price = client.futures_symbol_ticker(symbol=coin)
-                        
+                        hist_klines = client.futures_klines(symbol=coin, interval=str(orderTime)+"m",limit=1)
+                        btc_price_high = hist_klines[0][2]
+                        btc_price_low = hist_klines[0][3]
+                        btc_price_open =hist_klines[0][1]
+
                     elif (botType == "Spot"):
                         btc_price = client.get_symbol_ticker(symbol=coin)
-                        
+                        hist_klines = client.get_klines(symbol=coin, interval=str(orderTime)+"m", limit= 1)
+                        btc_price_high = hist_klines[0][2]
+                        btc_price_low = hist_klines[0][3]
+                        btc_price_open =hist_klines[0][1]
+
                     now = datetime.now()
                     currentTime = now.strftime("%H:%M")
                     
@@ -1196,6 +1204,19 @@ def MainFunc(path):
                     c3 = ws2.cell(row = flag, column = 6)
                     c3.value = float(btc_price["price"])
                     c3.number_format
+
+                    c4_high = ws2.cell(row = flag, column = 4)
+                    c4_high.value = float(btc_price_high)
+                    c4_high.number_format
+
+                    c5_low = ws2.cell(row = flag, column = 5)
+                    c5_low.value = float(btc_price_low)
+                    c5_low.number_format
+
+                    c6_open = ws2.cell(row = flag, column = 3)
+                    c6_open.value = float(btc_price_open)
+                    c6_open.number_format
+
                     wb2.save(path)
                     
                     wbt = xw.Book(path)
